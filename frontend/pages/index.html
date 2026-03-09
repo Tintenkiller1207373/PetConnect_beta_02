@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startseite - PetConnect</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">
+                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html" style="color: var(--primary);"><strong>Home</strong></a></li>
+                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
+                    <li><a href="found.html">Tier Gefunden?</a></li>
+                    <li><a href="login.html">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="container">
+            <h1>Dein Tier vermisst? Wir helfen!</h1>
+            <p>PetConnect nutzt künstliche Intelligenz um vermisste Hunde und Katzen wiederzufinden</p>
+            <div style="margin-top: 2rem;">
+                <a href="missing-pets.html" class="btn btn-primary" style="margin-right: 1rem;">
+                    Vermisste Tiere ansehen
+                </a>
+                <a href="found.html" class="btn btn-secondary">
+                    Tier gefunden?
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <main class="container" style="margin-bottom: 60px;">
+        <section style="margin-bottom: 4rem;">
+            <h2 style="text-align: center; margin-bottom: 3rem;">Unsere Features</h2>
+            
+            <div class="grid grid-3">
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">AI-Powered</h3>
+                    <p>PyTorch ResNet50 Bildanalyse für genaue Übereinstimmungen von Tierfotos</p>
+                </div>
+                
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--secondary); margin-bottom: 1rem;">Geotagging</h3>
+                    <p>Bestimmung des Fundortes mit GPS-Koordinaten und Kartendarstellung</p>
+                </div>
+                
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--accent); margin-bottom: 1rem;">Benachrichtigungen</h3>
+                    <p>Tierbesitzer werden automatisch bei möglichen Treffern informiert</p>
+                </div>
+                
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--success); margin-bottom: 1rem;">Sicher</h3>
+                    <p>Passwort-Hashing mit Bcrypt und sichere Session Management</p>
+                </div>
+                
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: var(--warning); margin-bottom: 1rem;">Schnell</h3>
+                    <p>Millisekunden-schnelle Bildverarbeitung mit GPU-Unterstützung</p>
+                </div>
+                
+                <div class="card" style="text-align: center;">
+                    <h3 style="color: #9B59B6; margin-bottom: 1rem;">Community</h3>
+                    <p>Finden, helfen und zusammen Tiere retten</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it Works -->
+        <section style="background: white; padding: 40px; border-radius: 12px; margin-bottom: 4rem;">
+            <h2 style="text-align: center; margin-bottom: 3rem;">Wie funktioniert PetConnect?</h2>
+            
+            <div class="grid grid-2">
+                <div>
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Für Besitzer</h3>
+                    <ol style="list-style: decimal; margin-left: 2rem; color: var(--dark);">
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Registriere</strong> dich kostenlos auf PetConnect
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Erstelle Profile</strong> für all deine Haustiere mit Foto
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Markiere als vermisst</strong> wenn dein Tier weg ist
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Erhalte Benachrichtigungen</strong> wenn die KI einen Match findet
+                        </li>
+                        <li>
+                            <strong>Kontaktiere Finder</strong> und wirde vereint mit deinem Tier!
+                        </li>
+                    </ol>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--secondary); margin-bottom: 1rem;">Für Finder</h3>
+                    <ol style="list-style: decimal; margin-left: 2rem; color: var(--dark);">
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Fotografiere</strong> das gefundene Tier
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Lade das Bild hoch</strong> auf unserer "Tier gefunden" Seite
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Unsere AI</strong> vergleicht das Bild mit der Datenbank
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong>Erhalte Ergebnisse</strong> mit Kontaktdaten des Besitzers
+                        </li>
+                        <li>
+                            <strong>Kontaktiere</strong> den Besitzer und helfe dem Tier!
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
+                        color: white; padding: 60px 40px; border-radius: 12px; text-align: center;">
+            <h2 style="color: white; margin-bottom: 1rem;">Bereit zu helfen?</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem; color: rgba(255,255,255,0.9);">
+                Beginne jetzt, Tiere zu retten und zu finden!
+            </p>
+            <div>
+                <a href="login.html" class="btn btn-primary" style="background: white; color: var(--primary); margin-right: 1rem;">
+                    Konto erstellen
+                </a>
+                <a href="found.html" class="btn btn-outline" style="border-color: white; color: white;">
+                    Tier gefunden melden
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 PetConnect - Wiederfindung vermisster Haustiere</p>
+        <p><a href="#">Datenschutz</a> | <a href="#">Impressum</a></p>
+    </footer>
+
+    <script src="../js/api.js"></script>
+</body>
+</html>

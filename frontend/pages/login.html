@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Registrierung - PetConnect</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #483D8B 0%, #6A5ACD 100%);">
+    
+    <div style="width: 100%; max-width: 900px; padding: 20px;">
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" style="height: 80px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+        </div>
+        <div class="grid grid-2">
+            <!-- Login Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 style="color: var(--primary);">Login</h2>
+                </div>
+                
+                <div id="loginAlerts"></div>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">E-Mail</label>
+                        <input type="email" id="loginEmail" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Passwort</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        Einloggen
+                    </button>
+                </form>
+                
+                <p style="text-align: center; margin-top: 1rem; color: var(--border);">
+                    Noch kein Konto? <a href="#" onclick="switchToRegister()">Jetzt registrieren</a>
+                </p>
+            </div>
+            
+            <!-- Register Form -->
+            <div class="card" id="registerCard" style="display: none;">
+                <div class="card-header">
+                    <h2 style="color: var(--secondary);">Registrierung</h2>
+                </div>
+                
+                <div id="registerAlerts"></div>
+                
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerUsername">Benutzername</label>
+                        <input type="text" id="registerUsername" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerEmail">E-Mail</label>
+                        <input type="email" id="registerEmail" name="email" required>
+                    </div>
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label for="registerFirstName">Vorname</label>
+                            <input type="text" id="registerFirstName" name="firstName">
+                        </div>
+                        <div class="form-group">
+                            <label for="registerLastName">Nachname</label>
+                            <input type="text" id="registerLastName" name="lastName">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerPassword">Passwort (min. 8 Zeichen)</label>
+                        <input type="password" id="registerPassword" name="password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerPasswordConfirm">Passwort wiederholen</label>
+                        <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                        Registrieren
+                    </button>
+                </form>
+                
+                <p style="text-align: center; margin-top: 1rem; color: var(--border);">
+                    Bereits registriert? <a href="#" onclick="switchToLogin()">Hier einloggen</a>
+                </p>
+            </div>
+            
+            <!-- Info -->
+            <div class="card" style="grid-column: 1/-1; background: rgba(255, 255, 255, 0.95);">
+                <h3 style="color: var(--dark); margin-bottom: 1rem;">Warum bei PetConnect anmelden?</h3>
+                <ul style="list-style: none; color: var(--dark);">
+                    <li style="margin-bottom: 0.8rem;">✓ Profile für all deine Haustiere erstellen</li>
+                    <li style="margin-bottom: 0.8rem;">✓ Schnell "Vermisst" Status ändern</li>
+                    <li style="margin-bottom: 0.8rem;">✓ Echtzeit-Benachrichtigungen über Funde</li>
+                    <li style="margin-bottom: 0.8rem;">✓ Mit Findern direkt kommunizieren</li>
+                    <li style="margin-bottom: 0.8rem;">✓ Belohnungen anbieten</li>
+                    <li>✓ Komplette Tierverwaltung an einem Ort</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="index.html" style="color: white; font-weight: 600; text-decoration: none;">← Zurück zur Startseite</a>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        function switchToRegister() {
+            document.getElementById('loginForm').parentElement.style.display = 'none';
+            document.getElementById('registerCard').style.display = 'block';
+        }
+        
+        function switchToLogin() {
+            document.getElementById('loginForm').parentElement.style.display = 'block';
+            document.getElementById('registerCard').style.display = 'none';
+        }
+        
+        // Login Form Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await api.post('auth/login', { email, password });
+                
+                if (response.success) {
+                    session.setSession(response.session_token, response.user_id);
+                    showLoginAlert('Login erfolgreich!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showLoginAlert(response.message, 'error');
+                }
+            } catch (error) {
+                showLoginAlert('Login-Fehler: ' + error.message, 'error');
+            }
+        });
+        
+        // Register Form Handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const firstName = document.getElementById('registerFirstName').value;
+            const lastName = document.getElementById('registerLastName').value;
+            
+            // Validate passwords match
+            if (password !== passwordConfirm) {
+                showRegisterAlert('Passwörter stimmen nicht überein', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showRegisterAlert('Passwort muss mindestens 8 Zeichen lang sein', 'error');
+                return;
+            }
+            
+            const success = await register(username, email, password, firstName, lastName);
+            if (success) {
+                document.getElementById('registerForm').reset();
+                setTimeout(() => {
+                    switchToLogin();
+                }, 2000);
+            }
+        });
+        
+        // Custom alert functions
+        function showLoginAlert(message, type) {
+            const container = document.getElementById('loginAlerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <span>${message}</span>
+                <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        function showRegisterAlert(message, type) {
+            const container = document.getElementById('registerAlerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <span>${message}</span>
+                <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Override showAlert to use login/register alerts
+        const originalShowAlert = showAlert;
+        showAlert = function(message, type) {
+            if (document.getElementById('registerCard').style.display !== 'none') {
+                showRegisterAlert(message, type);
+            } else {
+                showLoginAlert(message, type);
+            }
+        }
+        
+        // Don't check existing session - let user login
+    </script>
+</body>
+</html>
