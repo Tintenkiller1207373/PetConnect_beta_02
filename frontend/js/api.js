@@ -11,6 +11,10 @@ const AI_SERVICE_URL = 'http://localhost:8002/api';
  */
 class SessionManager {
     constructor() {
+        this.syncFromStorage();
+    }
+
+    syncFromStorage() {
         this.sessionToken = localStorage.getItem('sessionToken');
         this.userId = localStorage.getItem('userId');
     }
@@ -23,6 +27,7 @@ class SessionManager {
     }
     
     getSession() {
+        this.syncFromStorage();
         return {
             token: this.sessionToken,
             userId: this.userId
@@ -37,6 +42,7 @@ class SessionManager {
     }
     
     isAuthenticated() {
+        this.syncFromStorage();
         return this.sessionToken !== null;
     }
 }
@@ -67,18 +73,22 @@ class APIClient {
                 'Content-Type': 'application/json',
             }
         };
-        
+
+        const config = { ...defaultOptions, ...options };
+
         // Add session token if available
         if (session.isAuthenticated()) {
-            defaultOptions.headers['Authorization'] = `Bearer ${session.sessionToken}`;
-            if (defaultOptions.method === 'POST' || defaultOptions.method === 'PUT') {
-                if (options.body && typeof options.body === 'object') {
-                    options.body.session_token = session.sessionToken;
-                }
+            config.headers = {
+                ...defaultOptions.headers,
+                ...(options.headers || {}),
+                'Authorization': `Bearer ${session.sessionToken}`
+            };
+
+            if (['POST', 'PUT', 'PATCH'].includes(String(config.method).toUpperCase()) && config.body && typeof config.body === 'object') {
+                config.body.session_token = session.sessionToken;
             }
         }
-        
-        const config = { ...defaultOptions, ...options };
+
         if (config.body && typeof config.body === 'object') {
             config.body = JSON.stringify(config.body);
         }
@@ -171,6 +181,81 @@ class APIClient {
 }
 
 const api = new APIClient(API_BASE_URL);
+
+function createNavItem(href, label, options = {}) {
+    const listItem = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = href;
+    link.textContent = label;
+
+    if (options.active) {
+        link.style.color = 'var(--primary)';
+        const strong = document.createElement('strong');
+        strong.textContent = label;
+        link.textContent = '';
+        link.appendChild(strong);
+    }
+
+    if (options.onClick) {
+        link.setAttribute('onclick', options.onClick);
+    }
+
+    listItem.appendChild(link);
+    return listItem;
+}
+
+function updateAuthNavigation() {
+    const navList = document.querySelector('.nav-links');
+    if (!navList) {
+        return;
+    }
+
+    const authenticated = session.isAuthenticated();
+    const currentPage = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    const loginItem = navList.querySelector('a[href="login.html"]')?.closest('li');
+    const dashboardItem = navList.querySelector('a[href="dashboard.html"]')?.closest('li');
+    const logoutItem = navList.querySelector('a[onclick*="logout"]')?.closest('li');
+
+    if (authenticated) {
+        if (loginItem) {
+            loginItem.remove();
+        }
+
+        if (!dashboardItem) {
+            navList.appendChild(createNavItem('dashboard.html', 'Dashboard', {
+                active: currentPage === 'dashboard.html'
+            }));
+        }
+
+        if (!logoutItem) {
+            navList.appendChild(createNavItem('#', 'Logout', {
+                onClick: 'logout(); return false;'
+            }));
+        }
+
+        return;
+    }
+
+    if (logoutItem) {
+        logoutItem.remove();
+    }
+
+    if (dashboardItem) {
+        dashboardItem.remove();
+    }
+
+    if (!loginItem) {
+        navList.appendChild(createNavItem('login.html', 'Login', {
+            active: currentPage === 'login.html'
+        }));
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateAuthNavigation);
+} else {
+    updateAuthNavigation();
+}
 
 /**
  * Authentication Functions
@@ -265,10 +350,13 @@ async function createPet(data) {
 async function getMissingPets(limit = 50, offset = 0) {
     try {
         const response = await api.get('pets/missing', { limit, offset });
-        return response.success ? response.pets : [];
+        if (!response.success) {
+            throw new Error(response.message || 'Fehler beim Laden vermisster Tiere');
+        }
+        return response.pets || [];
     } catch (error) {
         console.error('Error fetching missing pets:', error);
-        return [];
+        throw error;
     }
 }
 

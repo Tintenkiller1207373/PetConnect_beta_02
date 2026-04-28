@@ -6,8 +6,8 @@
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: POST, GET, PUT, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -53,10 +53,13 @@ try {
     if (empty($session_token) && isset($_GET['session_token'])) {
         $session_token = $_GET['session_token'];
     }
+
+    // Oeffentliche Route: /api/pets/missing
+    $is_public_missing_list = ($method === 'GET' && ($path === 'missing' || $path === 'pets/missing'));
     
     $user_id = $user->validateSession($session_token);
     
-    if (!$user_id) {
+    if (!$user_id && !$is_public_missing_list) {
         $response = ['success' => false, 'message' => 'Unauthorized', 'debug' => [
             'token_found' => !empty($session_token),
             'token_length' => strlen($session_token),
@@ -153,7 +156,7 @@ try {
             $response = ['success' => false, 'message' => 'Tier nicht gefunden'];
         }
     }
-    elseif ($path === 'pet/missing' && $method === 'POST') {
+    elseif (($path === 'pet/missing' || $path === 'missing') && $method === 'POST') {
         $data = !empty($_POST) ? $_POST : $input;
         
         $response = $pet->markAsMissing(
@@ -191,6 +194,14 @@ try {
             $data['data'] ?? []
         );
     }
+    elseif (preg_match('/^(\d+)\/found$/', $path, $matches) && in_array($method, ['POST', 'PUT'], true)) {
+        $pet_id = $matches[1];
+        
+        $response = $pet->resolveMissing(
+            $pet_id,
+            $user_id
+        );
+    }
     elseif ($path === 'pet/resolve' && $method === 'POST') {
         $data = !empty($_POST) ? $_POST : $input;
         
@@ -208,7 +219,7 @@ try {
             $user_id
         );
     }
-    elseif ($path === 'pets/missing' && $method === 'GET') {
+    elseif (($path === 'missing' || $path === 'pets/missing') && $method === 'GET') {
         $limit = $_GET['limit'] ?? 50;
         $offset = $_GET['offset'] ?? 0;
         $missing_pets = $pet->getMissingPets($limit, $offset);

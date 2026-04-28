@@ -114,6 +114,25 @@ Du solltest die PetConnect Homepage sehen! 🎉
 
 ---
 
+## 🔄 Schritt 5 (optional): Alle Embeddings neu aufbauen
+
+Wenn die Wiederfindung schwach ist oder alte Embeddings inkonsistent sind, kannst du alle Tier-Embeddings neu erzeugen.
+
+```powershell
+# Im Projekt-Root ausführen
+php backend/scripts/rebuild_all_embeddings.php --dry-run
+
+# Danach real ausführen
+php backend/scripts/rebuild_all_embeddings.php
+
+# Optional: nur ein bestimmtes Tier
+php backend/scripts/rebuild_all_embeddings.php --pet-id=4
+```
+
+Voraussetzung: Der KI-Service muss laufen (Port 8002 in der aktuellen Backend-Konfiguration).
+
+---
+
 ## 🧪 Test Workflow (5 Minuten Demo)
 
 ### 1️⃣ Registriere einen Test-Benutzer

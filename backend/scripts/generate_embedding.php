@@ -24,8 +24,8 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Python AI-Service aufrufen
-    $ai_service_url = 'http://localhost:8002/extract_embedding';
+    // Python AI-Service aufrufen (gleiches Endpoint-Format wie im Finder-Flow)
+    $ai_service_url = 'http://localhost:8002/api/generate_embedding';
     
     // Vollständiger Pfad zur Bilddatei
     if (!file_exists($image_path)) {
@@ -34,12 +34,13 @@ try {
     }
     
     $ch = curl_init($ai_service_url);
-    
-    $file = new CURLFile($image_path, mime_content_type($image_path), basename($image_path));
-    
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => ['image' => $file],
+        CURLOPT_POSTFIELDS => json_encode([
+            'image_path' => $image_path,
+            'pet_id' => $pet_id
+        ]),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 30
     ]);
@@ -70,16 +71,20 @@ try {
     // Base64-decodiertes binäres Embedding
     $embedding_binary = base64_decode($result['embedding']);
     
-    // In Datenbank speichern (REPLACE für Idempotenz)
+    // Vorhandene Primärbilder zurücksetzen, neues Embedding als primär speichern
+    $stmt_reset_primary = $db->prepare("UPDATE pet_images SET is_primary = FALSE WHERE pet_id = :pet_id");
+    $stmt_reset_primary->bindParam(':pet_id', $pet_id);
+    $stmt_reset_primary->execute();
+
     $stmt = $db->prepare("
-        REPLACE INTO pet_images (pet_id, image_path, embedding, created_at) 
-        VALUES (:pet_id, :image_path, :embedding, NOW())
+        INSERT INTO pet_images (pet_id, image_path, embedding, embedding_model, is_primary)
+        VALUES (:pet_id, :image_path, :embedding, 'resnet50', TRUE)
     ");
-    
+
     $stmt->bindParam(':pet_id', $pet_id);
     $stmt->bindParam(':image_path', $image_path);
     $stmt->bindParam(':embedding', $embedding_binary, PDO::PARAM_LOB);
-    
+
     if ($stmt->execute()) {
         error_log("Embedding erfolgreich generiert für Pet ID: $pet_id");
         exit(0);

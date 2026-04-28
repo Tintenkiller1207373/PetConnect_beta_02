@@ -114,13 +114,78 @@ class Finder {
             return ['success' => false, 'message' => 'Fehler: ' . $e->getMessage()];
         }
     }
+
+    /**
+     * Absoluten Dateipfad fuer ein vermisstes Tierbild ermitteln.
+     */
+    private function resolveMissingPetImagePath($profile_image, $stored_image_path = null) {
+        $candidates = [];
+
+        if (!empty($stored_image_path)) {
+            $candidates[] = $stored_image_path;
+            $candidates[] = __DIR__ . '/../uploads/pets/' . basename($stored_image_path);
+        }
+
+        if (!empty($profile_image)) {
+            $candidates[] = $profile_image;
+            $candidates[] = __DIR__ . '/../uploads/pets/' . basename($profile_image);
+        }
+
+        foreach ($candidates as $candidate) {
+            if (!empty($candidate) && file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Fehlendes Embedding fuer vermisstes Tier aus vorhandenem Bild erzeugen und persistieren.
+     */
+    private function ensureMissingPetEmbedding($pet_id, $profile_image, $stored_image_path = null, $existing_image_id = null) {
+        $resolved_path = $this->resolveMissingPetImagePath($profile_image, $stored_image_path);
+        if (!$resolved_path) {
+            return null;
+        }
+
+        $embedding_result = $this->generateFinderEmbedding($resolved_path);
+        if (empty($embedding_result['success']) || empty($embedding_result['embedding'])) {
+            return null;
+        }
+
+        $embedding_binary = base64_decode($embedding_result['embedding'], true);
+        if ($embedding_binary === false) {
+            return null;
+        }
+
+        if (!empty($existing_image_id)) {
+            $stmt = $this->db->prepare(
+                "UPDATE pet_images
+                 SET embedding = ?, image_path = ?, embedding_model = 'resnet50', is_primary = TRUE
+                 WHERE id = ?"
+            );
+            $stmt->execute([$embedding_binary, $resolved_path, $existing_image_id]);
+        } else {
+            $stmt = $this->db->prepare("UPDATE pet_images SET is_primary = FALSE WHERE pet_id = ?");
+            $stmt->execute([$pet_id]);
+
+            $stmt = $this->db->prepare(
+                "INSERT INTO pet_images (pet_id, image_path, embedding, embedding_model, is_primary)
+                 VALUES (?, ?, ?, 'resnet50', TRUE)"
+            );
+            $stmt->execute([$pet_id, $resolved_path, $embedding_binary]);
+        }
+
+        return $embedding_binary;
+    }
     
     /**
      * Ähnliche vermisste Tiere finden (Cosine Similarity)
      * Nur gleiche Tierart wird verglichen!
-     * Threshold: 0.55 = 55% Ähnlichkeit (erhöht für bessere Matches)
+    * Threshold: 0.45 = 45% Ähnlichkeit (bessere Recall bei variierenden Handyfotos)
      */
-    private function findMatches($finder_report_id, $finder_embedding, $species, $threshold = 0.55) {
+    private function findMatches($finder_report_id, $finder_embedding, $species, $threshold = 0.45) {
         try {
             // DEBUG: Log Start
             error_log("=== FINDER MATCHING START ===");
@@ -128,15 +193,15 @@ class Finder {
             error_log("Species Filter: " . $species);
             error_log("Threshold: " . $threshold);
             
-            // Alle vermissten Tiere mit ihren Embeddings holen (NUR gleiche Tierart!)
+            // Alle vermissten Tiere holen; Embeddings koennen fehlen und werden dann on-demand erzeugt.
             $stmt = $this->db->prepare(
                 "SELECT pi.id as image_id, pi.embedding, pi.image_path, p.id as pet_id, p.name, p.species, p.breed, p.profile_image,
                         u.id as user_id, u.email, u.phone, mr.location_last_seen, mr.latitude, mr.longitude
-                 FROM pet_images pi
-                 JOIN pets p ON pi.pet_id = p.id
+                 FROM pets p
                  JOIN users u ON p.user_id = u.id
                  JOIN missing_reports mr ON p.id = mr.pet_id
-                 WHERE p.is_missing = TRUE AND mr.status = 'active' AND pi.is_primary = TRUE AND p.species = ?"
+                 LEFT JOIN pet_images pi ON pi.pet_id = p.id AND pi.is_primary = TRUE
+                 WHERE p.is_missing = TRUE AND mr.status = 'active' AND p.species = ?"
             );
             $stmt->execute([$species]);
             $missing_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -156,8 +221,19 @@ class Finder {
                 error_log("Vergleiche mit Pet ID: " . $pet['pet_id'] . " (" . $pet['name'] . ")");
                 error_log("Hat Embedding: " . (isset($pet['embedding']) && !empty($pet['embedding']) ? "JA" : "NEIN"));
                 
-                if (empty($pet['embedding'])) {
-                    error_log("SKIP: Pet " . $pet['pet_id'] . " hat kein Embedding!");
+                $pet_embedding = $pet['embedding'];
+                if (empty($pet_embedding)) {
+                    error_log("Pet " . $pet['pet_id'] . " hat kein Embedding - versuche On-Demand-Generierung.");
+                    $pet_embedding = $this->ensureMissingPetEmbedding(
+                        $pet['pet_id'],
+                        $pet['profile_image'] ?? null,
+                        $pet['image_path'] ?? null,
+                        $pet['image_id'] ?? null
+                    );
+                }
+
+                if (empty($pet_embedding)) {
+                    error_log("SKIP: Pet " . $pet['pet_id'] . " hat weiterhin kein nutzbares Embedding!");
                     continue;
                 }
                 
@@ -168,7 +244,7 @@ class Finder {
                     CURLOPT_POST => true,
                     CURLOPT_POSTFIELDS => json_encode([
                         'embedding1' => base64_encode($finder_embedding),
-                        'embedding2' => base64_encode($pet['embedding'])
+                        'embedding2' => base64_encode($pet_embedding)
                     ]),
                     CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
                     CURLOPT_TIMEOUT => 10

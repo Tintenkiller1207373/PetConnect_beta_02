@@ -22,6 +22,8 @@ echo "profile_image (pets table): " . ($result['profile_image'] ?? 'NULL') . "\n
 echo "image_path (pet_images table): " . ($result['image_path'] ?? 'NULL') . "\n";
 echo "location_last_seen: " . ($result['location_last_seen'] ?? 'NULL') . "\n";
 
+
+
 echo "\n=== FILE CHECK ===\n";
 if ($result['profile_image']) {
     echo "profile_image exists: " . (file_exists($result['profile_image']) ? "YES" : "NO") . "\n";

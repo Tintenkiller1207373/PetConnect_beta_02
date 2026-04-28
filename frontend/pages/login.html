@@ -5,17 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login / Registrierung - PetConnect</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        body.login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 24px;
+            background: linear-gradient(135deg, #483D8B 0%, #6A5ACD 100%);
+            color: white;
+        }
+
+        .auth-shell {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+        }
+
+        .auth-logo-wrap {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            height: 92px;
+            width: auto;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        .auth-card .btn {
+            width: 100%;
+        }
+
+        .auth-card .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .auth-card .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .auth-card .card-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auth-card input {
+            background: white;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .auth-shell {
+                padding: 0;
+            }
+        }
+    </style>
 </head>
-<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #483D8B 0%, #6A5ACD 100%);">
-    
-    <div style="width: 100%; max-width: 900px; padding: 20px;">
-        <!-- Logo -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" style="height: 80px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+<body class="login-page">
+    <div class="auth-shell">
+        <div class="auth-logo-wrap">
+            <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="auth-logo">
         </div>
+
         <div class="grid grid-2">
             <!-- Login Form -->
-            <div class="card">
+            <div class="card auth-card">
                 <div class="card-header">
                     <h2 style="color: var(--primary);">Login</h2>
                 </div>
@@ -33,18 +98,18 @@
                         <input type="password" id="loginPassword" name="password" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <button type="submit" class="btn btn-primary">
                         Einloggen
                     </button>
                 </form>
                 
-                <p style="text-align: center; margin-top: 1rem; color: var(--border);">
+                <p class="auth-switch">
                     Noch kein Konto? <a href="#" onclick="switchToRegister()">Jetzt registrieren</a>
                 </p>
             </div>
             
             <!-- Register Form -->
-            <div class="card" id="registerCard" style="display: none;">
+            <div class="card auth-card" id="registerCard" style="display: none;">
                 <div class="card-header">
                     <h2 style="color: var(--secondary);">Registrierung</h2>
                 </div>
@@ -83,30 +148,17 @@
                         <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                    <button type="submit" class="btn btn-secondary">
                         Registrieren
                     </button>
                 </form>
                 
-                <p style="text-align: center; margin-top: 1rem; color: var(--border);">
+                <p class="auth-switch">
                     Bereits registriert? <a href="#" onclick="switchToLogin()">Hier einloggen</a>
                 </p>
             </div>
-            
-            <!-- Info -->
-            <div class="card" style="grid-column: 1/-1; background: rgba(255, 255, 255, 0.95);">
-                <h3 style="color: var(--dark); margin-bottom: 1rem;">Warum bei PetConnect anmelden?</h3>
-                <ul style="list-style: none; color: var(--dark);">
-                    <li style="margin-bottom: 0.8rem;">✓ Profile für all deine Haustiere erstellen</li>
-                    <li style="margin-bottom: 0.8rem;">✓ Schnell "Vermisst" Status ändern</li>
-                    <li style="margin-bottom: 0.8rem;">✓ Echtzeit-Benachrichtigungen über Funde</li>
-                    <li style="margin-bottom: 0.8rem;">✓ Mit Findern direkt kommunizieren</li>
-                    <li style="margin-bottom: 0.8rem;">✓ Belohnungen anbieten</li>
-                    <li>✓ Komplette Tierverwaltung an einem Ort</li>
-                </ul>
-            </div>
         </div>
-        
+
         <div style="text-align: center; margin-top: 3rem;">
             <a href="index.html" style="color: white; font-weight: 600; text-decoration: none;">← Zurück zur Startseite</a>
         </div>

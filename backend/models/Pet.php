@@ -198,13 +198,20 @@ class Pet {
      */
     public function getMissingPets($limit = 50, $offset = 0) {
         try {
-            $sql = "SELECT p.*, u.first_name, u.last_name, u.phone, 
-                           mr.location_last_seen, mr.date_missing, mr.description, mr.reward_amount
+            $sql = "SELECT p.*, u.first_name, u.last_name, u.phone,
+                           mr.location_last_seen, mr.date_missing, mr.description, mr.reward_amount,
+                           mr.created_at AS report_created_at
                     FROM pets p
                     JOIN users u ON p.user_id = u.id
-                    JOIN missing_reports mr ON p.id = mr.pet_id
-                    WHERE p.is_missing = TRUE AND mr.status = 'active'
-                    ORDER BY mr.created_at DESC
+                    LEFT JOIN missing_reports mr ON mr.id = (
+                        SELECT m2.id
+                        FROM missing_reports m2
+                        WHERE m2.pet_id = p.id AND m2.status = 'active'
+                        ORDER BY m2.created_at DESC
+                        LIMIT 1
+                    )
+                    WHERE p.is_missing = TRUE OR mr.id IS NOT NULL
+                    ORDER BY COALESCE(mr.created_at, p.updated_at) DESC
                     LIMIT ? OFFSET ?";
             
             $stmt = $this->db->prepare($sql);
