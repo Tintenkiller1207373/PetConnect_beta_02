@@ -21,11 +21,10 @@ $image_path = $argv[2];
 require_once __DIR__ . '/../config/Database.php';
 
 try {
-    $database = new Database();
-    $db = $database->getConnection();
+    $db = Database::getInstance()->getConnection();
     
     // Python AI-Service aufrufen (gleiches Endpoint-Format wie im Finder-Flow)
-    $ai_service_url = 'http://localhost:8002/api/generate_embedding';
+    $ai_service_url = AI_SERVICE_URL . '/api/generate_embedding';
     
     // Vollständiger Pfad zur Bilddatei
     if (!file_exists($image_path)) {

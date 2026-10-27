@@ -180,7 +180,7 @@
             pets.forEach(pet => {
                 const animalEmoji = pet.species === 'dog' ? '🐕' : '🐈';
                 const imagePath = pet.profile_image && pet.profile_image !== 'default.jpg' && pet.profile_image.trim() !== '' 
-                    ? `http://localhost:8001/uploads/pets/${pet.profile_image}` 
+                    ? `/uploads/pets/${pet.profile_image}` 
                     : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23ECF0F1%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2240%22>' + animalEmoji + '</text></svg>';
                 
                 html += `
@@ -218,7 +218,7 @@
 
             const animalEmoji = pet.species === 'dog' ? '🐕' : '🐈';
             const imagePath = pet.profile_image && pet.profile_image !== 'default.jpg' && pet.profile_image.trim() !== '' 
-                ? `http://localhost:8001/uploads/pets/${pet.profile_image}` 
+                ? `/uploads/pets/${pet.profile_image}` 
                 : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22><rect fill=%22%23ECF0F1%22 width=%22300%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2280%22>' + animalEmoji + '</text></svg>';
 
             const html = `

@@ -104,21 +104,13 @@ class Pet {
     private function generateEmbeddingAsync($pet_id, $image_path) {
         // PHP asynchroner Aufruf mit exec im Hintergrund
         $scriptPath = __DIR__ . '/../scripts/generate_embedding.php';
-        $command = sprintf(
-            'php "%s" %d "%s" > /dev/null 2>&1 &',
-            $scriptPath,
-            $pet_id,
-            $image_path
-        );
+        // PHP_BINARY statt "php": funktioniert auch wenn php nicht im PATH liegt (XAMPP)
+        $args = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($scriptPath) . ' ' . (int)$pet_id . ' ' . escapeshellarg($image_path);
+        $command = $args . ' > /dev/null 2>&1 &';
         
         // Windows-kompatibel machen
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            $command = sprintf(
-                'start /B php "%s" %d "%s" > NUL 2>&1',
-                $scriptPath,
-                $pet_id,
-                $image_path
-            );
+            $command = 'start /B "" ' . $args . ' > NUL 2>&1';
         }
         
         exec($command);
@@ -132,7 +124,7 @@ class Pet {
             // Python-Service aufrufen (FastAPI auf Port 8000)
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => 'http://localhost:8002/api/generate_embedding',
+                CURLOPT_URL => AI_SERVICE_URL . '/api/generate_embedding',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode(['image_path' => $image_path, 'pet_id' => $pet_id]),
@@ -170,12 +162,12 @@ class Pet {
      */
     public function markAsMissing($pet_id, $user_id, $location, $date_missing, $description, $latitude = null, $longitude = null, $reward = null) {
         try {
-            $stmt = $this->db->prepare("UPDATE pets SET is_missing = TRUE WHERE id = ? AND user_id = ?");
-            $stmt->execute([$pet_id, $user_id]);
-            
-            if ($stmt->rowCount() === 0) {
+            if (!$this->isOwner($pet_id, $user_id)) {
                 return ['success' => false, 'message' => 'Tier nicht gefunden'];
             }
+            
+            $stmt = $this->db->prepare("UPDATE pets SET is_missing = TRUE WHERE id = ? AND user_id = ?");
+            $stmt->execute([$pet_id, $user_id]);
             
             // Missing Report erstellen
             $sql = "INSERT INTO missing_reports (pet_id, user_id, location_last_seen, latitude, longitude, date_missing, description, reward_amount) 
@@ -215,7 +207,9 @@ class Pet {
                     LIMIT ? OFFSET ?";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$limit, $offset]);
+            $stmt->bindValue(1, max(1, min(100, (int)$limit)), PDO::PARAM_INT);
+            $stmt->bindValue(2, max(0, (int)$offset), PDO::PARAM_INT);
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];
@@ -233,6 +227,15 @@ class Pet {
         } catch (Exception $e) {
             return [];
         }
+    }
+    
+    /**
+     * Prüfen ob das Tier dem User gehört
+     */
+    public function isOwner($pet_id, $user_id) {
+        $stmt = $this->db->prepare("SELECT 1 FROM pets WHERE id = ? AND user_id = ?");
+        $stmt->execute([$pet_id, $user_id]);
+        return (bool)$stmt->fetchColumn();
     }
     
     /**
@@ -286,6 +289,10 @@ class Pet {
      */
     public function resolveMissing($pet_id, $user_id) {
         try {
+            if (!$this->isOwner($pet_id, $user_id)) {
+                return ['success' => false, 'message' => 'Tier nicht gefunden oder keine Berechtigung'];
+            }
+            
             $stmt = $this->db->prepare("UPDATE pets SET is_missing = FALSE WHERE id = ? AND user_id = ?");
             $stmt->execute([$pet_id, $user_id]);
             
@@ -330,8 +337,9 @@ class Pet {
             $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             foreach ($images as $img) {
-                if (file_exists($this->upload_dir . $img['image_path'])) {
-                    unlink($this->upload_dir . $img['image_path']);
+                $img_file = $this->upload_dir . basename($img['image_path']);
+                if (file_exists($img_file)) {
+                    unlink($img_file);
                 }
             }
             

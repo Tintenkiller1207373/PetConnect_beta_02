@@ -13,12 +13,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import torch
 import torchvision.transforms as transforms
-from torchvision.models import resnet50
+from torchvision.models import resnet50, ResNet50_Weights
 from PIL import Image
 import numpy as np
 import base64
 import io
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -50,7 +51,8 @@ class EmbeddingModel:
         logger.info(f"🖥️ Using device: {self.device}")
         
         # ResNet50 laden (pretrained auf ImageNet)
-        self.model = resnet50(pretrained=True)
+        # IMAGENET1K_V1 == altes pretrained=True, damit gespeicherte Embeddings kompatibel bleiben
+        self.model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         
         # Letzten Layer entfernen (um Features statt Klassifikation zu bekommen)
         self.model = torch.nn.Sequential(*list(self.model.children())[:-1])
@@ -431,7 +433,7 @@ if __name__ == "__main__":
     
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8002,
+        host=os.getenv("AI_HOST", "0.0.0.0"),
+        port=int(os.getenv("AI_PORT", "8002")),
         log_level="info"
     )

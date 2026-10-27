@@ -122,6 +122,7 @@ echo.
 
 REM PHP Server starten
 echo [5/6] Starte PHP Server auf Port 8001...
+if not defined DB_PASS set "DB_PASS=FabiKli10"
 start "PetConnect PHP Server" "!PHP_PATH!" -S localhost:8001 -t "%~dp0frontend" "%~dp0router.php"
 echo PHP Server gestartet.
 echo Frontend: http://localhost:8001/

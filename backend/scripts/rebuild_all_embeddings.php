@@ -20,7 +20,7 @@ $dryRun = array_key_exists('dry-run', $opts);
 $petIdFilter = isset($opts['pet-id']) ? (int)$opts['pet-id'] : null;
 $limit = isset($opts['limit']) ? max(1, (int)$opts['limit']) : null;
 
-$aiServiceUrl = 'http://localhost:8002/api/generate_embedding';
+$aiServiceUrl = AI_SERVICE_URL . '/api/generate_embedding';
 $baseUploadDir = realpath(__DIR__ . '/../uploads/pets');
 
 if ($baseUploadDir === false) {

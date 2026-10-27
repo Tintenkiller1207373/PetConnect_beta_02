@@ -1,0 +1,22 @@
+.git
+.gitignore
+.env
+**/__pycache__
+**/*.pyc
+*.md
+PROJECT_SUMMARY.txt
+docs
+start.bat
+frontend/pages/*.backup
+
+# Debug-/Testskripte nicht ins Image
+backend/debug_db.php
+backend/check_pet_data.php
+backend/test_*.php
+update_schema.php
+update_finder_schema.php
+temp_update_schema.sql
+
+# Nutzer-Uploads gehören ins Volume, nicht ins Image
+backend/uploads
+backend/logs

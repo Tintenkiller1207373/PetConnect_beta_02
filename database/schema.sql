@@ -3,9 +3,8 @@
 -- Zur Wiederfindung vermisster Haustiere mit PyTorch-Bildanalyse
 -- ============================================================================
 
--- Datenbank erstellen
-CREATE DATABASE IF NOT EXISTS petconnect;
-USE petconnect;
+-- Datenbank muss bereits existieren und ausgewählt sein
+-- (lokal: mysql petconnect < schema.sql, Docker: wird automatisch importiert)
 
 -- ============================================================================
 -- 1. Users Tabelle (Besitzer)
@@ -40,7 +39,7 @@ CREATE TABLE IF NOT EXISTS pets (
     age INT,
     weight DECIMAL(5,2),
     distinguishing_features TEXT,
-    profile_image VARCHAR(255) NOT NULL,
+    profile_image VARCHAR(255) NULL,
     microchip_id VARCHAR(50),
     is_missing BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +95,7 @@ CREATE TABLE IF NOT EXISTS missing_reports (
 CREATE TABLE IF NOT EXISTS finder_reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
     image_path VARCHAR(255) NOT NULL,
+    species ENUM('dog', 'cat') DEFAULT NULL,
     embedding LONGBLOB,
     location_found VARCHAR(255),
     latitude DECIMAL(10, 8),

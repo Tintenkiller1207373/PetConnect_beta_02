@@ -468,7 +468,7 @@
         function displayPetInfo() {
             const animalEmoji = petData.species === 'dog' ? '🐕' : '🐈';
             const imagePath = petData.profile_image && petData.profile_image !== 'default.jpg' && petData.profile_image.trim() !== '' 
-                ? `http://localhost:8001/uploads/pets/${petData.profile_image}` 
+                ? `/uploads/pets/${petData.profile_image}` 
                 : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23ECF0F1%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2240%22>' + animalEmoji + '</text></svg>';
             
             document.getElementById('petImage').src = imagePath;

@@ -1,17 +1,30 @@
 <?php
 /**
  * PetConnect - Application Configuration
- * Kopiere diese Datei zu .env oder fülle die Werte direkt ein
+ * Werte werden aus Umgebungsvariablen gelesen (z.B. in Coolify gesetzt),
+ * die zweiten Argumente sind die lokalen Entwicklungs-Defaults.
  */
+
+function env($key, $default = null) {
+    $value = getenv($key);
+    if ($value === false || $value === '') {
+        return $default;
+    }
+    $lower = strtolower($value);
+    if ($lower === 'true') return true;
+    if ($lower === 'false') return false;
+    return $value;
+}
 
 // ============================================================================
 // DATABASE CONFIGURATION
 // ============================================================================
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'petconnect');
-define('DB_USER', 'root');
-define('DB_PASS', 'FabiKli10');
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_PORT', (int)env('DB_PORT', 3306));
+define('DB_NAME', env('DB_NAME', 'petconnect'));
+define('DB_USER', env('DB_USER', 'root'));
+define('DB_PASS', env('DB_PASS', ''));
 define('DB_CHARSET', 'utf8mb4');
 
 // ============================================================================
@@ -20,15 +33,15 @@ define('DB_CHARSET', 'utf8mb4');
 
 define('APP_NAME', 'PetConnect');
 define('APP_VERSION', '1.0.0-beta');
-define('APP_ENV', 'development'); // development | staging | production
-define('APP_DEBUG', true); // Set to false in production
+define('APP_ENV', env('APP_ENV', 'development')); // development | staging | production
+define('APP_DEBUG', (bool)env('APP_DEBUG', true)); // Set to false in production
 
 // ============================================================================
 // SECURITY SETTINGS
 // ============================================================================
 
 define('SESSION_TIMEOUT', 604800); // 7 days in seconds
-define('SESSION_SECURE_COOKIE', false); // Set to true in production (HTTPS)
+define('SESSION_SECURE_COOKIE', (bool)env('SESSION_SECURE_COOKIE', false)); // Set to true in production (HTTPS)
 define('BCRYPT_COST', 12); // Password hashing cost
 
 // ============================================================================
@@ -44,7 +57,7 @@ define('UPLOAD_DIR_FINDER', __DIR__ . '/../uploads/finder/');
 // AI SERVICE CONFIGURATION
 // ============================================================================
 
-define('AI_SERVICE_URL', 'http://localhost:8002');
+define('AI_SERVICE_URL', rtrim(env('AI_SERVICE_URL', 'http://localhost:8002'), '/'));
 define('AI_SERVICE_TIMEOUT', 30); // seconds
 define('AI_SIMILARITY_THRESHOLD', 0.65); // Minimum match score (0.0 - 1.0)
 define('AI_EMBEDDING_MODEL', 'resnet50');

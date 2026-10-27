@@ -3,8 +3,8 @@
  * Zentrale Stelle für alle Backend-API Aufrufe
  */
 
-const API_BASE_URL = 'http://localhost:8001/api';
-const AI_SERVICE_URL = 'http://localhost:8002/api';
+// Relativ, damit es lokal (localhost:8001) und hinter einer Domain funktioniert
+const API_BASE_URL = '/api';
 
 /**
  * Session Management

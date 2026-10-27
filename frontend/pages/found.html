@@ -567,7 +567,7 @@
             
             for (const [index, match] of matches.entries()) {
                 const similarity = (match.similarity * 100).toFixed(1);
-                const imageUrl = match.image ? `http://localhost:8001/${match.image}` : 'https://via.placeholder.com/150?text=Kein+Bild';
+                const imageUrl = match.image ? `/${match.image}` : 'https://via.placeholder.com/150?text=Kein+Bild';
                 
                 // Prüfe ob location Koordinaten sind und hole ggf. Adresse
                 let location = match.location_last_seen;

@@ -9,7 +9,7 @@ require_once __DIR__ . '/../config/Database.php';
 class Finder {
     private $db;
     private $upload_dir = __DIR__ . '/../uploads/finder/';
-    private $ai_service_url = 'http://localhost:8002/api';
+    private $ai_service_url = AI_SERVICE_URL . '/api';
     
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
@@ -362,7 +362,9 @@ class Finder {
                  ORDER BY created_at DESC 
                  LIMIT ? OFFSET ?"
             );
-            $stmt->execute([$limit, $offset]);
+            $stmt->bindValue(1, max(1, min(100, (int)$limit)), PDO::PARAM_INT);
+            $stmt->bindValue(2, max(0, (int)$offset), PDO::PARAM_INT);
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];

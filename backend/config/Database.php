@@ -11,13 +11,14 @@ class Database {
     private $connection;
     
     private $db_host = DB_HOST;
+    private $db_port = DB_PORT;
     private $db_name = DB_NAME;
     private $db_user = DB_USER;
     private $db_pass = DB_PASS;
     
     private function __construct() {
         try {
-            $dsn = "mysql:host={$this->db_host};dbname={$this->db_name};charset=utf8mb4";
+            $dsn = "mysql:host={$this->db_host};port={$this->db_port};dbname={$this->db_name};charset=utf8mb4";
             $this->connection = new PDO(
                 $dsn,
                 $this->db_user,
@@ -39,7 +40,7 @@ class Database {
 
     private function createDatabaseIfMissing() {
         try {
-            $serverDsn = "mysql:host={$this->db_host};charset=utf8mb4";
+            $serverDsn = "mysql:host={$this->db_host};port={$this->db_port};charset=utf8mb4";
             $serverConnection = new PDO(
                 $serverDsn,
                 $this->db_user,
@@ -54,7 +55,7 @@ class Database {
                 "CREATE DATABASE IF NOT EXISTS `{$this->db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
             );
 
-            $dsn = "mysql:host={$this->db_host};dbname={$this->db_name};charset=utf8mb4";
+            $dsn = "mysql:host={$this->db_host};port={$this->db_port};dbname={$this->db_name};charset=utf8mb4";
             $this->connection = new PDO(
                 $dsn,
                 $this->db_user,

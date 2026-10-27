@@ -1,0 +1,43 @@
+# PetConnect - Deployment mit Coolify ("Docker Compose" Build Pack)
+# oder lokal: docker compose up --build  ->  http://localhost:8000
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      - SERVICE_FQDN_APP_8000
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-petconnect}
+      - DB_USER=${DB_USER:-petconnect}
+      - DB_PASS=${DB_PASS:?DB_PASS muss gesetzt sein}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+    # Coolify routet über die Domain (SERVICE_FQDN_APP_8000); für lokalen Test einkommentieren:
+    # ports:
+    #   - "8000:8000"
+    volumes:
+      - uploads:/app/backend/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${DB_NAME:-petconnect}
+      - MYSQL_USER=${DB_USER:-petconnect}
+      - MYSQL_PASSWORD=${DB_PASS:?DB_PASS muss gesetzt sein}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD muss gesetzt sein}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  uploads:
+  mysql-data:

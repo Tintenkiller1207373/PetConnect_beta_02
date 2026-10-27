@@ -116,7 +116,11 @@ try {
             $response = ['success' => false, 'message' => 'Kein Bild uploadiert'];
         } else {
             $pet_id = $input['pet_id'] ?? $_POST['pet_id'] ?? '';
-            $response = $pet->uploadProfileImage($pet_id, $_FILES['image']);
+            if (!$pet->isOwner($pet_id, $user_id)) {
+                $response = ['success' => false, 'message' => 'Nicht autorisiert'];
+            } else {
+                $response = $pet->uploadProfileImage($pet_id, $_FILES['image']);
+            }
         }
     }
     elseif ($path === 'pet/list' && $method === 'GET') {

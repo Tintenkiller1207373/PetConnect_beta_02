@@ -53,8 +53,11 @@ if (strpos($uri, '/api/') === 0) {
 
 // Upload-Dateien ausliefern (aus backend/uploads)
 if (strpos($uri, '/uploads/') === 0) {
-    $path = __DIR__ . '/backend' . $uri;
-    if (file_exists($path) && !is_dir($path)) {
+    $uploadsRoot = realpath(__DIR__ . '/backend/uploads');
+    $path = realpath(__DIR__ . '/backend' . rawurldecode($uri));
+    // Nur Dateien innerhalb von backend/uploads ausliefern (kein ../config/Config.php)
+    if ($path !== false && $uploadsRoot !== false
+        && strpos($path, $uploadsRoot . DIRECTORY_SEPARATOR) === 0 && is_file($path)) {
         // Dateityp ermitteln und setzen
         $mime_types = [
             'jpg' => 'image/jpeg',
