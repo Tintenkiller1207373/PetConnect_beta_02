@@ -56,7 +56,8 @@
 /* ---------- Basis ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { -webkit-text-size-adjust: 100%; }
+/* Kein Element darf die Seite verbreitern – sonst zoomt iOS Safari heraus */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
 
 body {
     font-family: var(--font-body);
@@ -67,11 +68,12 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: clip;
 }
 
-main { flex: 1; }
+main { flex: 1; min-width: 0; }
 
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }
 
 /* hidden-Attribut muss auch gegen display:flex der Komponenten gewinnen */
 [hidden] { display: none !important; }
@@ -249,6 +251,7 @@ p + p { margin-top: .75em; }
 
 .btn-sm { padding: .5rem .9rem; font-size: .92rem; }
 .btn-block { width: 100%; justify-content: center; }
+@media (max-width: 420px) { .btn { white-space: normal; } }
 
 .btn .spin {
     width: 1em; height: 1em;
@@ -337,6 +340,7 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 .dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .dropzone.has-image { padding: 0; border-style: solid; border-color: var(--line); overflow: hidden; }
 .dropzone.has-image img { width: 100%; height: 300px; object-fit: cover; }
+@media (max-width: 560px) { .dropzone.has-image img { height: 240px; } }
 .dropzone .change-photo {
     position: absolute; right: .75rem; bottom: .75rem;
     background: rgba(255, 255, 255, .95);
@@ -406,13 +410,15 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 /* ---------- Der Vermisst-Aushang ---------- */
 .posters {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
     gap: 1.75rem;
 }
 .poster {
     position: relative;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    min-width: 0;
     background: var(--surface);
     border-radius: var(--radius-paper);
     box-shadow: var(--shadow-paper);
@@ -445,21 +451,28 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
     line-height: 1;
 }
 .poster-photo {
+    position: relative;
     margin: 0 1rem;
     aspect-ratio: 4 / 3;
     background: var(--brand-soft);
     border-radius: 2px;
     overflow: hidden;
 }
-.poster-photo img { width: 100%; height: 100%; object-fit: cover; }
-.poster-body { padding: .9rem 1rem 1rem; flex: 1; }
-.poster-name { font-family: var(--font-display); font-weight: 750; font-size: 1.5rem; line-height: 1.1; }
+/* absolut positioniert: die Originalgröße des Fotos (z. B. 4032 px vom Handy)
+   fließt so nicht in die Kartenbreite ein */
+.poster-photo img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+@supports not (aspect-ratio: 1) {
+    .poster-photo { height: 0; padding-top: 75%; }
+}
+.poster-body { padding: .9rem 1rem 1rem; flex: 1; min-width: 0; }
+.poster-name { font-family: var(--font-display); font-weight: 750; font-size: 1.5rem; line-height: 1.1; overflow-wrap: anywhere; }
 .poster-meta { color: var(--muted); margin-top: .15rem; }
 .poster-where {
     display: flex; gap: .4rem; align-items: flex-start;
     margin-top: .6rem; font-size: .95rem;
 }
 .poster-where svg { width: 1.1em; height: 1.1em; margin-top: .15em; color: var(--alarm); flex-shrink: 0; }
+.poster-where span, .poster-meta { min-width: 0; overflow-wrap: anywhere; }
 .poster-reward {
     display: inline-block;
     margin-top: .6rem;
@@ -476,9 +489,11 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
     border-top: 2px dashed var(--line);
     height: 112px;
     overflow: hidden;
+    contain: size;
 }
 .poster-tabs span {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     text-align: center;
@@ -494,6 +509,16 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 /* ein Zettel ist schon abgerissen */
 .poster-tabs span:nth-child(3) { visibility: hidden; }
 
+/* Handy: Aushang kompakter, damit mehr als eine Karte pro Bildschirm passt */
+@media (max-width: 560px) {
+    .posters { gap: 1.5rem; }
+    .poster-head { font-size: 1.5rem; padding: .9rem .75rem .45rem; }
+    .poster-photo { margin: 0 .75rem; }
+    .poster-body { padding: .75rem .75rem .85rem; }
+    .poster-name { font-size: 1.3rem; }
+    .poster-tabs { height: 84px; }
+}
+
 /* ---------- Tierliste im Dashboard ---------- */
 .pet-list { display: grid; gap: 1rem; }
 .pet-row {
@@ -506,7 +531,8 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
     border-radius: var(--radius-panel);
     padding: 1rem;
 }
-.pet-row img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--brand-soft); }
+.pet-row > * { min-width: 0; }
+.pet-row img { width: 96px; height: 96px; max-width: none; object-fit: cover; border-radius: 10px; background: var(--brand-soft); }
 .pet-row h3 { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .pet-row .actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 680px) {
@@ -532,14 +558,15 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
     padding: 1rem;
     margin-top: 1rem;
 }
-.match img { width: 140px; height: 140px; object-fit: cover; border-radius: 8px; background: var(--brand-soft); }
+.match > * { min-width: 0; }
+.match img { width: 140px; height: 140px; max-width: none; object-fit: cover; border-radius: 8px; background: var(--brand-soft); }
 .match h3 { margin-bottom: .25rem; }
 .match dl { display: grid; grid-template-columns: auto 1fr; gap: .2rem .9rem; margin-top: .6rem; font-size: .97rem; }
 .match dt { color: var(--muted); }
 .match dd { overflow-wrap: anywhere; }
 @media (max-width: 560px) {
     .match { grid-template-columns: 1fr; }
-    .match img { width: 100%; height: 220px; }
+    .match img { width: 100%; height: auto; aspect-ratio: 4 / 3; }
 }
 
 /* Ähnlichkeits-Balken */
@@ -556,6 +583,7 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
     background: var(--brand-soft);
     z-index: 1;
 }
+@media (max-width: 560px) { .map { height: 280px; } }
 .map-bar {
     display: flex;
     flex-wrap: wrap;
@@ -652,6 +680,11 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 }
 .modal-close svg { width: 20px; height: 20px; }
 .modal-photo { width: 100%; height: 320px; object-fit: cover; background: var(--brand-soft); }
+@media (max-width: 560px) {
+    .modal { padding: .75rem; }
+    .modal-photo { height: auto; aspect-ratio: 4 / 3; }
+    .modal-body { padding: 1.25rem; }
+}
 .modal-body { padding: 1.5rem; }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: .35rem 1.25rem; margin: 1rem 0; }
 .facts dt { color: var(--muted); }
@@ -683,6 +716,7 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 
 /* ---------- Startseite ---------- */
 .hero { padding: clamp(2.5rem, 7vw, 5rem) 0 1rem; }
+.hero-grid > * { min-width: 0; }
 .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
 .hero h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); margin-bottom: 1.1rem; }
 .hero .lead { margin-bottom: 2rem; }
@@ -700,6 +734,12 @@ input::placeholder, textarea::placeholder { color: #9a95ad; }
 }
 .path svg.path-icon { width: 52px; height: 52px; padding: 12px; border-radius: 12px; }
 .path svg.path-arrow { width: 22px; height: 22px; }
+.path > div { min-width: 0; }
+@media (max-width: 420px) {
+    .path { grid-template-columns: 44px 1fr auto; gap: .8rem; padding: 1rem; }
+    .path svg.path-icon { width: 44px; height: 44px; padding: 10px; }
+    .path > div strong { font-size: 1.15rem; }
+}
 .path strong { display: block; font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
 .path span { color: var(--muted); font-size: .97rem; }
 .path-found { background: var(--signal); }
