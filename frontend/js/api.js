@@ -1,576 +1,521 @@
 /**
- * PetConnect - API Client & Helper Functions
- * Zentrale Stelle für alle Backend-API Aufrufe
+ * PetConnect - API-Client und gemeinsame UI-Bausteine
+ * Wird von allen Seiten eingebunden.
  */
 
 // Relativ, damit es lokal (localhost:8001) und hinter einer Domain funktioniert
 const API_BASE_URL = '/api';
 
-/**
- * Session Management
- */
-class SessionManager {
-    constructor() {
-        this.syncFromStorage();
-    }
-
-    syncFromStorage() {
-        this.sessionToken = localStorage.getItem('sessionToken');
-        this.userId = localStorage.getItem('userId');
-    }
-    
-    setSession(token, userId) {
-        this.sessionToken = token;
-        this.userId = userId;
+/* ==========================================================================
+   Session
+   ========================================================================== */
+const session = {
+    get token() { return localStorage.getItem('sessionToken'); },
+    get userId() { return localStorage.getItem('userId'); },
+    set(token, userId) {
         localStorage.setItem('sessionToken', token);
         localStorage.setItem('userId', userId);
-    }
-    
-    getSession() {
-        this.syncFromStorage();
-        return {
-            token: this.sessionToken,
-            userId: this.userId
-        };
-    }
-    
-    clearSession() {
-        this.sessionToken = null;
-        this.userId = null;
+    },
+    clear() {
         localStorage.removeItem('sessionToken');
         localStorage.removeItem('userId');
-    }
-    
-    isAuthenticated() {
-        this.syncFromStorage();
-        return this.sessionToken !== null;
-    }
-}
+    },
+    isAuthenticated() { return !!this.token; }
+};
 
-const session = new SessionManager();
-
-/**
- * API Client mit automatischer Error-Behandlung
- */
+/* ==========================================================================
+   API-Client
+   ========================================================================== */
 class APIClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
-    
-    async request(endpoint, options = {}) {
-        // Remove leading slash from endpoint if present
-        endpoint = endpoint.replace(/^\/+/, '');
-        
-        const url = `${this.baseUrl}/${endpoint}`;
-        
-        // DEBUG: Log the URL being called
-        console.log('API Request URL:', url);
-        console.log('API Request options:', options);
-        
-        const defaultOptions = {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        };
 
-        const config = { ...defaultOptions, ...options };
+    async request(endpoint, { method = 'GET', body = null, params = null } = {}) {
+        let url = `${this.baseUrl}/${endpoint.replace(/^\/+/, '')}`;
+        const headers = {};
+        const token = session.token;
 
-        // Add session token if available
-        if (session.isAuthenticated()) {
-            config.headers = {
-                ...defaultOptions.headers,
-                ...(options.headers || {}),
-                'Authorization': `Bearer ${session.sessionToken}`
-            };
-
-            if (['POST', 'PUT', 'PATCH'].includes(String(config.method).toUpperCase()) && config.body && typeof config.body === 'object') {
-                config.body.session_token = session.sessionToken;
-            }
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (params) {
+            const query = new URLSearchParams({ ...params, ...(token ? { session_token: token } : {}) });
+            url += `?${query}`;
+        } else if (method === 'GET' && token) {
+            url += `?session_token=${encodeURIComponent(token)}`;
         }
 
-        if (config.body && typeof config.body === 'object') {
-            config.body = JSON.stringify(config.body);
+        let payload = body;
+        if (body instanceof FormData) {
+            if (token) body.append('session_token', token);
+        } else if (body) {
+            headers['Content-Type'] = 'application/json';
+            payload = JSON.stringify(token ? { ...body, session_token: token } : body);
         }
-        
+
+        let response;
         try {
-            console.log('Fetching:', url, 'with config:', config);
-            const response = await fetch(url, config);
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-            
-            const text = await response.text();
-            console.log('Response text:', text);
-            
-            const data = JSON.parse(text);
-            console.log('Parsed data:', data);
-            
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP ${response.status}`);
-            }
-            
-            return data;
-        } catch (error) {
-            console.error('API Error:', error);
+            response = await fetch(url, { method, headers, body: payload });
+        } catch (e) {
+            throw new Error('Keine Verbindung zum Server. Prüfe deine Internetverbindung.');
+        }
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            throw new Error(`Der Server hat unerwartet geantwortet (HTTP ${response.status}).`);
+        }
+
+        if (!response.ok || data.success === false) {
+            const error = new Error(data.message || `Anfrage fehlgeschlagen (HTTP ${response.status})`);
+            error.data = data;
             throw error;
         }
+        return data;
     }
-    
-    get(endpoint, params = {}) {
-        // Add session token to params for GET requests
-        if (session.isAuthenticated()) {
-            params.session_token = session.sessionToken;
-        }
-        const queryString = new URLSearchParams(params).toString();
-        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-        return this.request(url, { method: 'GET' });
-    }
-    
-    post(endpoint, body = {}) {
-        return this.request(endpoint, {
-            method: 'POST',
-            body
-        });
-    }
-    
-    put(endpoint, body = {}) {
-        return this.request(endpoint, {
-            method: 'PUT',
-            body
-        });
-    }
-    
-    async postFormData(endpoint, formData) {
-        // Remove leading slash from endpoint if present
-        endpoint = endpoint.replace(/^\/+/, '');
-        
-        const url = `${this.baseUrl}/${endpoint}`;
-        
-        // Add session token to FormData
-        if (session.isAuthenticated()) {
-            formData.append('session_token', session.sessionToken);
-        }
-        
-        console.log('FormData Request URL:', url);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-                // NO Content-Type header - browser sets multipart/form-data automatically
-            });
-            
-            console.log('FormData Response status:', response.status);
-            
-            const text = await response.text();
-            console.log('FormData Response text:', text);
-            
-            const data = JSON.parse(text);
-            console.log('FormData Parsed data:', data);
-            
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP ${response.status}`);
-            }
-            
-            return data;
-        } catch (error) {
-            console.error('FormData API Error:', error);
-            throw error;
-        }
-    }
+
+    get(endpoint, params) { return this.request(endpoint, { params }); }
+    post(endpoint, body = {}) { return this.request(endpoint, { method: 'POST', body }); }
+    put(endpoint, body = {}) { return this.request(endpoint, { method: 'PUT', body }); }
 }
 
 const api = new APIClient(API_BASE_URL);
 
-function createNavItem(href, label, options = {}) {
-    const listItem = document.createElement('li');
-    const link = document.createElement('a');
-    link.href = href;
-    link.textContent = label;
-
-    if (options.active) {
-        link.style.color = 'var(--primary)';
-        const strong = document.createElement('strong');
-        strong.textContent = label;
-        link.textContent = '';
-        link.appendChild(strong);
-    }
-
-    if (options.onClick) {
-        link.setAttribute('onclick', options.onClick);
-    }
-
-    listItem.appendChild(link);
-    return listItem;
+/* ==========================================================================
+   Helfer
+   ========================================================================== */
+function esc(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
-function updateAuthNavigation() {
-    const navList = document.querySelector('.nav-links');
-    if (!navList) {
-        return;
-    }
+function speciesLabel(species) {
+    return species === 'cat' ? 'Katze' : species === 'dog' ? 'Hund' : 'Tier';
+}
 
-    const authenticated = session.isAuthenticated();
-    const currentPage = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
-    const loginItem = navList.querySelector('a[href="login.html"]')?.closest('li');
-    const dashboardItem = navList.querySelector('a[href="dashboard.html"]')?.closest('li');
-    const logoutItem = navList.querySelector('a[onclick*="logout"]')?.closest('li');
+function formatDate(value) {
+    if (!value) return '';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (isNaN(date)) return '';
+    return date.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
-    if (authenticated) {
-        if (loginItem) {
-            loginItem.remove();
-        }
+function formatMoney(value) {
+    const amount = Number(value);
+    if (!amount) return '';
+    return amount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
 
-        if (!dashboardItem) {
-            navList.appendChild(createNavItem('dashboard.html', 'Dashboard', {
-                active: currentPage === 'dashboard.html'
-            }));
-        }
+function isMissing(pet) {
+    return Number(pet.is_missing) === 1 || pet.is_missing === true;
+}
 
-        if (!logoutItem) {
-            navList.appendChild(createNavItem('#', 'Logout', {
-                onClick: 'logout(); return false;'
-            }));
-        }
+// Ort lesbar machen: "Koordinaten: 48.1, 11.5" -> "48.1000, 11.5000"
+function formatPlace(text) {
+    if (!text) return 'Ort unbekannt';
+    const m = String(text).match(/^Koordinaten:\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+    return m ? `Nähe ${Number(m[1]).toFixed(4)}, ${Number(m[2]).toFixed(4)}` : text;
+}
 
-        return;
-    }
+const PLACEHOLDER_PHOTO = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#ebe8f7"/>' +
+    '<g fill="#b9b1e0" transform="translate(200 150)"><ellipse cx="0" cy="22" rx="34" ry="28"/>' +
+    '<ellipse cx="-38" cy="-14" rx="13" ry="17"/><ellipse cx="-14" cy="-38" rx="13" ry="17"/>' +
+    '<ellipse cx="14" cy="-38" rx="13" ry="17"/><ellipse cx="38" cy="-14" rx="13" ry="17"/></g></svg>'
+);
 
-    if (logoutItem) {
-        logoutItem.remove();
-    }
+function petPhotoUrl(pet) {
+    const file = pet && pet.profile_image;
+    if (!file || file === 'default.jpg' || file === 'null' || !String(file).trim()) return PLACEHOLDER_PHOTO;
+    if (/^(https?:|data:|\/)/.test(file)) return file;
+    if (file.startsWith('uploads/')) return '/' + file;
+    return '/uploads/pets/' + encodeURIComponent(file);
+}
 
-    if (dashboardItem) {
-        dashboardItem.remove();
-    }
+function photoTag(src, alt, attrs = '') {
+    return `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" ${attrs} onerror="this.onerror=null;this.src=PLACEHOLDER_PHOTO">`;
+}
 
-    if (!loginItem) {
-        navList.appendChild(createNavItem('login.html', 'Login', {
-            active: currentPage === 'login.html'
-        }));
+function setBusy(button, busy, busyLabel) {
+    if (busy) {
+        button.dataset.label = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spin" aria-hidden="true"></span> ${esc(busyLabel || 'Bitte warten …')}`;
+    } else {
+        button.disabled = false;
+        if (button.dataset.label) button.innerHTML = button.dataset.label;
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateAuthNavigation);
-} else {
-    updateAuthNavigation();
+/* ==========================================================================
+   Icons (inline SVG, erben die Textfarbe)
+   ========================================================================== */
+const ICONS = {
+    logo: '<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M6 13a4 4 0 0 1 4-4h4l2.5-4h7L26 9h4a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V13z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><g fill="currentColor"><ellipse cx="20" cy="25" rx="4.6" ry="3.8"/><ellipse cx="14.3" cy="20" rx="1.9" ry="2.4"/><ellipse cx="17.8" cy="16.6" rx="1.9" ry="2.4"/><ellipse cx="22.2" cy="16.6" rx="1.9" ry="2.4"/><ellipse cx="25.7" cy="20" rx="1.9" ry="2.4"/></g></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    paw: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16" rx="4.5" ry="3.8"/><ellipse cx="6" cy="10.5" rx="1.9" ry="2.5"/><ellipse cx="9.6" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="14.4" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="18" cy="10.5" rx="1.9" ry="2.5"/></svg>',
+    dog: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 8c-2 0-4 2-5 6l3 2 2-4v10a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5V12l2 4 3-2c-1-4-3-6-5-6z"/><circle cx="13" cy="15" r=".8" fill="currentColor"/><circle cx="19" cy="15" r=".8" fill="currentColor"/><path d="M14.5 20h3l-1.5 1.5z" fill="currentColor"/></svg>',
+    cat: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l4 6h10l4-6v13a9 9 0 0 1-18 0z"/><circle cx="12.5" cy="17" r=".8" fill="currentColor"/><circle cx="19.5" cy="17" r=".8" fill="currentColor"/><path d="M14.5 21h3L16 22.5z" fill="currentColor"/><path d="M4 20h5M4 23h5M23 20h5M23 23h5"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+    locate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>'
+};
+
+function icon(name, cls = '') {
+    return cls ? ICONS[name].replace('<svg ', `<svg class="${cls}" `) : ICONS[name];
 }
 
-/**
- * Authentication Functions
- */
-async function register(username, email, password, firstName, lastName) {
+/* ==========================================================================
+   Kopf- und Fußzeile
+   ========================================================================== */
+function renderChrome() {
+    const page = document.body.dataset.page;
+    if (!page) return;
+
+    const loggedIn = session.isAuthenticated();
+    const link = (href, label, key) =>
+        `<a href="${href}"${page === key ? ' aria-current="page"' : ''}>${label}</a>`;
+
+    const header = document.createElement('header');
+    header.className = 'site-header';
+    header.innerHTML = `
+        <div class="wrap">
+            <a class="brand" href="index.html" aria-label="PetConnect Startseite">${icon('logo')}PetConnect</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">${icon('menu')}</button>
+            <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+                ${link('missing-pets.html', 'Vermisste Tiere', 'missing')}
+                ${loggedIn
+                    ? link('dashboard.html', 'Meine Tiere', 'dashboard') + '<a href="#" data-action="logout">Abmelden</a>'
+                    : link('login.html', 'Anmelden', 'login')}
+                <a class="btn btn-signal btn-sm" href="found.html"${page === 'found' ? ' aria-current="page"' : ''}>${icon('camera')}Tier gefunden</a>
+            </nav>
+        </div>`;
+    document.body.prepend(header);
+
+    const toggle = header.querySelector('.nav-toggle');
+    const nav = header.querySelector('.nav');
+    toggle.addEventListener('click', () => {
+        const open = nav.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open);
+    });
+    header.querySelector('[data-action="logout"]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
+
+    const footer = document.createElement('footer');
+    footer.className = 'site-footer';
+    footer.innerHTML = `
+        <div class="wrap">
+            <span>© ${new Date().getFullYear()} PetConnect – gemeinsam Haustiere nach Hause bringen</span>
+            <nav aria-label="Fußzeile">
+                <a href="missing-pets.html">Vermisste Tiere</a>
+                <a href="found.html">Fund melden</a>
+                <a href="index.html#ablauf">So funktioniert's</a>
+            </nav>
+        </div>`;
+    document.body.append(footer);
+}
+
+/* ==========================================================================
+   Meldungen (Toasts)
+   ========================================================================== */
+function toast(message, type = 'info', timeout = 6000) {
+    let region = document.querySelector('.toasts');
+    if (!region) {
+        region = document.createElement('div');
+        region.className = 'toasts';
+        region.setAttribute('role', 'status');
+        region.setAttribute('aria-live', 'polite');
+        document.body.append(region);
+    }
+    const iconName = { success: 'check', error: 'alert', info: 'info' }[type] || 'info';
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `${icon(iconName)}<span>${esc(message)}</span><button type="button" aria-label="Meldung schließen">×</button>`;
+    el.querySelector('button').addEventListener('click', () => el.remove());
+    region.append(el);
+    if (timeout) setTimeout(() => el.remove(), timeout);
+}
+
+/* ==========================================================================
+   Modal
+   ========================================================================== */
+let lastFocus = null;
+
+function openModal(html) {
+    let modal = document.getElementById('modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal';
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-dialog" role="dialog" aria-modal="true" tabindex="-1">
+            <button class="modal-close" type="button" aria-label="Schließen">${icon('close')}</button>
+            <div class="modal-content"></div></div>`;
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        modal.querySelector('.modal-close').addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        document.body.append(modal);
+    }
+    lastFocus = document.activeElement;
+    modal.querySelector('.modal-content').innerHTML = html;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('.modal-dialog').focus();
+}
+
+function closeModal() {
+    const modal = document.getElementById('modal');
+    if (!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    lastFocus?.focus();
+}
+
+/* ==========================================================================
+   Vermisst-Aushang
+   ========================================================================== */
+function posterHTML(pet) {
+    const tab = pet.phone ? esc(pet.phone) : 'petconnect';
+    const reward = formatMoney(pet.reward_amount);
+    const since = formatDate(pet.date_missing);
+    return `
+        <button type="button" class="poster" data-pet-id="${esc(pet.id)}" aria-label="${esc(pet.name)} – Details ansehen">
+            <div class="poster-head" aria-hidden="true">VERMISST</div>
+            <div class="poster-photo">${photoTag(petPhotoUrl(pet), pet.name)}</div>
+            <div class="poster-body">
+                <div class="poster-name">${esc(pet.name)}</div>
+                <div class="poster-meta">${speciesLabel(pet.species)}${pet.breed ? ', ' + esc(pet.breed) : ''}${since ? ' · seit ' + since : ''}</div>
+                <div class="poster-where">${icon('pin')}<span>${esc(formatPlace(pet.location_last_seen))}</span></div>
+                ${reward ? `<span class="poster-reward">Finderlohn ${reward}</span>` : ''}
+            </div>
+            <div class="poster-tabs" aria-hidden="true">${`<span>${tab}</span>`.repeat(6)}</div>
+        </button>`;
+}
+
+function missingPetDetailHTML(pet) {
+    const reward = formatMoney(pet.reward_amount);
+    const facts = [
+        ['Tierart', speciesLabel(pet.species)],
+        ['Rasse', pet.breed],
+        ['Farbe', pet.color],
+        ['Alter', pet.age ? `${pet.age} Jahre` : ''],
+        ['Gewicht', Number(pet.weight) ? `${Number(pet.weight).toLocaleString('de-DE')} kg` : ''],
+        ['Vermisst seit', formatDate(pet.date_missing)],
+        ['Zuletzt gesehen', formatPlace(pet.location_last_seen)],
+        ['Finderlohn', reward]
+    ].filter(([, v]) => v);
+
+    return `
+        ${photoTag(petPhotoUrl(pet), pet.name, 'class="modal-photo"')}
+        <div class="modal-body">
+            <span class="status status-missing">Vermisst</span>
+            <h2 class="mt-1">${esc(pet.name)}</h2>
+            <dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+            ${pet.distinguishing_features ? `<h4>Besondere Merkmale</h4><p class="muted">${esc(pet.distinguishing_features)}</p>` : ''}
+            ${pet.description ? `<h4 class="mt-1">Was passiert ist</h4><p class="muted">${esc(pet.description)}</p>` : ''}
+            <div class="note mt-2">${icon('info')}<div>
+                <strong>Du hast ${esc(pet.name)} gesehen?</strong><br>
+                ${pet.phone
+                    ? `Ruf ${esc([pet.first_name, pet.last_name].filter(Boolean).join(' ') || 'die Besitzer')} direkt an: <a href="tel:${esc(pet.phone)}">${esc(pet.phone)}</a>. Oder melde den Fund mit Foto.`
+                    : 'Fotografiere das Tier und melde den Fund. Die Besitzer sehen deine Meldung in ihrem Konto.'}
+            </div></div>
+            <div class="form-actions">
+                ${pet.phone ? `<a class="btn btn-ghost" href="tel:${esc(pet.phone)}">${icon('phone')}Anrufen</a>` : ''}
+                <a class="btn btn-signal" href="found.html">${icon('camera')}Fund mit Foto melden</a>
+            </div>
+        </div>`;
+}
+
+/* ==========================================================================
+   Auth
+   ========================================================================== */
+async function requireAuth() {
+    if (!session.isAuthenticated()) {
+        redirectToLogin();
+        return null;
+    }
     try {
-        const response = await api.post('auth/register', {
-            username,
-            email,
-            password,
-            first_name: firstName,
-            last_name: lastName
-        });
-        
-        if (response.success) {
-            showAlert('Registrierung erfolgreich! Bitte melden Sie sich an.', 'success');
-            return true;
-        } else {
-            showAlert(response.message, 'error');
-            return false;
-        }
-    } catch (error) {
-        showAlert('Registrierungsfehler: ' + error.message, 'error');
-        return false;
+        const response = await api.get('auth/check');
+        if (response.data && response.data.is_logged_in) return response.data.user;
+    } catch (e) {
+        // fällt durch zum Login
     }
+    session.clear();
+    redirectToLogin();
+    return null;
 }
 
-async function login(email, password) {
-    try {
-        const response = await api.post('auth/login', {
-            email,
-            password
-        });
-        
-        if (response.success) {
-            session.setSession(response.session_token, response.user_id);
-            showAlert('Login erfolgreich!', 'success');
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1500);
-            return true;
-        } else {
-            showAlert(response.message, 'error');
-            return false;
-        }
-    } catch (error) {
-        showAlert('Login-Fehler: ' + error.message, 'error');
-        return false;
-    }
+function redirectToLogin() {
+    const next = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+    location.href = `login.html?next=${next}`;
 }
 
 async function logout() {
     try {
-        await api.post('auth/logout', {
-            session_token: session.sessionToken
-        });
-        session.clearSession();
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error('Logout error:', error);
+        await api.post('auth/logout');
+    } catch (e) {
+        // Session ist serverseitig evtl. schon abgelaufen
     }
+    session.clear();
+    location.href = 'index.html';
 }
 
-/**
- * Pet Management Functions
- */
-async function createPet(data) {
-    try {
-        if (!session.isAuthenticated()) {
-            showAlert('Bitte melden Sie sich an', 'error');
-            return false;
-        }
-        
-        const response = await api.post('pets/pet/create', {
-            session_token: session.sessionToken,
-            ...data
-        });
-        
-        if (response.success) {
-            showAlert('Tier erfolgreich registriert!', 'success');
-            return response.pet_id;
-        } else {
-            showAlert(response.message, 'error');
-            return false;
-        }
-    } catch (error) {
-        showAlert('Fehler: ' + error.message, 'error');
-        return false;
-    }
-}
+/* ==========================================================================
+   Foto-Auswahl mit Vorschau
+   ========================================================================== */
+function setupPhotoInput(dropzone, onChange) {
+    const input = dropzone.querySelector('input[type="file"]');
+    const original = dropzone.innerHTML;
 
-async function getMissingPets(limit = 50, offset = 0) {
-    try {
-        const response = await api.get('pets/missing', { limit, offset });
-        if (!response.success) {
-            throw new Error(response.message || 'Fehler beim Laden vermisster Tiere');
-        }
-        return response.pets || [];
-    } catch (error) {
-        console.error('Error fetching missing pets:', error);
-        throw error;
-    }
-}
-
-async function getUserPets() {
-    try {
-        const response = await api.get('pets/list', {
-            session_token: session.sessionToken
-        });
-        return response.success ? response.pets : [];
-    } catch (error) {
-        console.error('Error fetching user pets:', error);
-        return [];
-    }
-}
-
-async function markPetAsMissing(petId, location, dateMissing, description) {
-    try {
-        const response = await api.post('pets/missing', {
-            session_token: session.sessionToken,
-            pet_id: petId,
-            location,
-            date_missing: dateMissing,
-            description
-        });
-        
-        if (response.success) {
-            showAlert('Tier als vermisst markiert', 'success');
-            return true;
-        } else {
-            showAlert(response.message, 'error');
-            return false;
-        }
-    } catch (error) {
-        showAlert('Fehler: ' + error.message, 'error');
-        return false;
-    }
-}
-
-/**
- * Finder Report Functions (PUBLIC - no auth required)
- */
-async function submitFinderReport(formData) {
-    try {
-        console.log('=== SUBMITTING FINDER REPORT ===');
-        console.log('FormData entries:');
-        for (let [key, value] of formData.entries()) {
-            if (key === 'image') {
-                console.log(key + ':', value.name, value.size + ' bytes');
-            } else {
-                console.log(key + ':', value);
-            }
-        }
-        
-        const response = await fetch(`${API_BASE_URL}/finder/submit`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        console.log('Response status:', response.status);
-        
-        const data = await response.json();
-        console.log('Response data:', data);
-        
-        if (data.success) {
-            showAlert('Bericht erfolgreich eingereicht!', 'success');
-            return {
-                success: true,
-                finder_report_id: data.finder_report_id,
-                matches: data.matches
-            };
-        } else {
-            showAlert(data.message || 'Fehler beim Einreichen', 'error');
-            return { success: false };
-        }
-    } catch (error) {
-        console.error('Submit error:', error);
-        showAlert('Fehler beim Hochladen: ' + error.message, 'error');
-        return { success: false };
-    }
-}
-
-/**
- * UI Helper Functions
- */
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type}`;
-    alertDiv.innerHTML = `
-        <span>${message}</span>
-        <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    const container = document.querySelector('.container') || document.body;
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto-remove nach 5 Sekunden
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-function showSpinner(show = true) {
-    let spinner = document.getElementById('spinner');
-    if (show) {
-        if (!spinner) {
-            spinner = document.createElement('div');
-            spinner.id = 'spinner';
-            spinner.className = 'spinner';
-            spinner.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;';
-            document.body.appendChild(spinner);
-        }
-    } else if (spinner) {
-        spinner.remove();
-    }
-}
-
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('de-DE', options);
-}
-
-function truncate(text, length = 100) {
-    return text.length > length ? text.substring(0, length) + '...' : text;
-}
-
-/**
- * Drag & Drop Image Handler
- */
-class ImageUploader {
-    constructor(dropZoneId, fileInputId, onFileSelected) {
-        this.dropZone = document.getElementById(dropZoneId);
-        this.fileInput = document.getElementById(fileInputId);
-        this.onFileSelected = onFileSelected;
-        
-        this.initEventListeners();
-    }
-    
-    initEventListeners() {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            this.dropZone.addEventListener(eventName, this.preventDefaults, false);
-        });
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            this.dropZone.addEventListener(eventName, () => this.highlight(), false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            this.dropZone.addEventListener(eventName, () => this.unhighlight(), false);
-        });
-        
-        this.dropZone.addEventListener('drop', (e) => this.handleDrop(e), false);
-        this.dropZone.addEventListener('click', () => this.fileInput.click());
-        this.fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
-    }
-    
-    preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    
-    highlight() {
-        this.dropZone.classList.add('dragover');
-    }
-    
-    unhighlight() {
-        this.dropZone.classList.remove('dragover');
-    }
-    
-    handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        this.handleFiles(files);
-    }
-    
-    handleFiles(files) {
-        if (files.length === 0) return;
-        
-        const file = files[0];
-        
-        // Validate file type
+    const show = (file) => {
+        if (!file) return;
         if (!file.type.startsWith('image/')) {
-            showAlert('Bitte wählen Sie ein Bild aus', 'error');
+            toast('Bitte wähle eine Bilddatei (JPG, PNG oder GIF).', 'error');
             return;
         }
-        
-        // Validate file size (10MB max)
         if (file.size > 10 * 1024 * 1024) {
-            showAlert('Datei zu groß (max. 10MB)', 'error');
+            toast('Das Foto ist größer als 10 MB. Bitte wähle ein kleineres Bild.', 'error');
             return;
         }
-        
-        // Show preview
         const reader = new FileReader();
         reader.onload = (e) => {
-            const preview = document.getElementById('imagePreview');
-            if (preview) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            this.onFileSelected(file);
+            dropzone.classList.add('has-image');
+            dropzone.querySelectorAll(':scope > :not(input)').forEach(el => el.remove());
+            dropzone.insertAdjacentHTML('afterbegin', `<img src="${e.target.result}" alt="Ausgewähltes Foto"><span class="change-photo">Foto ändern</span>`);
+            onChange(file);
         };
         reader.readAsDataURL(file);
-    }
+    };
+
+    input.addEventListener('change', () => show(input.files[0]));
+    ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', (e) => show(e.dataTransfer.files[0]));
+
+    return {
+        reset() {
+            dropzone.classList.remove('has-image');
+            dropzone.innerHTML = original;
+            setupPhotoInput(dropzone, onChange);
+            onChange(null);
+        }
+    };
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if user is logged in and redirect if needed
-    if (!session.isAuthenticated()) {
-        const protectedPages = ['dashboard.html', 'my-pets.html', 'profile.html'];
-        const currentPage = window.location.pathname.split('/').pop();
-        
-        if (protectedPages.includes(currentPage)) {
-            window.location.href = 'login.html';
+/* ==========================================================================
+   Karte zum Markieren eines Ortes (Leaflet)
+   ========================================================================== */
+function createMapPicker({ mapId, statusId, locateId, popupText }) {
+    const status = document.getElementById(statusId);
+    const state = { lat: null, lng: null, address: null };
+    let geoTimer = null;
+    const map = L.map(mapId).setView([51.1657, 10.4515], 6);
+    let marker = null;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+    setTimeout(() => map.invalidateSize(), 200);
+
+    const markerIcon = L.icon({
+        iconUrl: '../assets/leaflet/images/marker-icon-2x-red.png',
+        shadowUrl: '../assets/leaflet/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    function set(lat, lng) {
+        state.lat = lat;
+        state.lng = lng;
+        if (!marker) {
+            marker = L.marker([lat, lng], { draggable: true, icon: markerIcon }).addTo(map);
+            marker.bindPopup(popupText);
+            marker.on('dragend', () => {
+                const p = marker.getLatLng();
+                set(p.lat, p.lng);
+            });
+        } else {
+            marker.setLatLng([lat, lng]);
         }
+        status.className = 'map-status set';
+        status.innerHTML = `${icon('check')}Ort markiert – Marker lässt sich verschieben`;
+        lookupAddress(lat, lng);
     }
-});
+
+    // Adresse zum Punkt holen (OpenStreetMap Nominatim), damit Meldungen lesbar sind
+    function lookupAddress(lat, lng) {
+        state.address = null;
+        clearTimeout(geoTimer);
+        geoTimer = setTimeout(async () => {
+            try {
+                const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=de&lat=${lat}&lon=${lng}`);
+                const a = (await r.json()).address || {};
+                const street = a.road ? a.road + (a.house_number ? ' ' + a.house_number : '') : (a.park || a.suburb || a.neighbourhood || '');
+                const town = [a.postcode, a.city || a.town || a.village || a.municipality].filter(Boolean).join(' ');
+                const text = [street, town].filter(Boolean).join(', ');
+                if (text && state.lat === lat && state.lng === lng) {
+                    state.address = text;
+                    status.innerHTML = `${icon('check')}${esc(text)} – Marker lässt sich verschieben`;
+                }
+            } catch (e) {
+                // ohne Adresse werden die Koordinaten gespeichert
+            }
+        }, 600);
+    }
+
+    map.on('click', (e) => set(e.latlng.lat, e.latlng.lng));
+
+    document.getElementById(locateId).addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            toast('Dein Browser kann den Standort nicht ermitteln. Tippe stattdessen auf die Karte.', 'info');
+            return;
+        }
+        status.className = 'map-status';
+        status.textContent = 'Standort wird ermittelt …';
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                set(pos.coords.latitude, pos.coords.longitude);
+            },
+            () => {
+                status.className = 'map-status error';
+                status.textContent = 'Standort nicht verfügbar. Tippe auf die Karte, um den Ort zu markieren.';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+
+    return {
+        get lat() { return state.lat; },
+        get lng() { return state.lng; },
+        get place() { return state.address || `Koordinaten: ${state.lat.toFixed(6)}, ${state.lng.toFixed(6)}`; },
+        hasLocation() { return state.lat !== null; },
+        flagMissing() {
+            status.className = 'map-status error';
+            status.innerHTML = `${icon('alert')}Bitte markiere den Ort auf der Karte.`;
+            document.getElementById(mapId).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
+        reset() {
+            if (marker) { map.removeLayer(marker); marker = null; }
+            state.lat = state.lng = state.address = null;
+            status.className = 'map-status';
+            status.textContent = 'Noch kein Ort markiert';
+        }
+    };
+}
+
+renderChrome();

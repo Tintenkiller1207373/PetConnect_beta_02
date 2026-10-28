@@ -3,154 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Startseite - PetConnect</title>
+    <title>PetConnect – vermisste Hunde und Katzen wiederfinden</title>
+    <meta name="description" content="Tier gefunden? Foto hochladen und PetConnect zeigt passende Vermisstenmeldungen. Tier vermisst? Meldung aufgeben und Funde direkt im Konto sehen.">
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html" style="color: var(--primary);"><strong>Home</strong></a></li>
-                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
-                    <li><a href="found.html">Tier Gefunden?</a></li>
-                    <li><a href="login.html">Login</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+<body data-page="home">
+    <main>
+        <section class="hero">
+            <div class="wrap hero-grid">
+                <div>
+                    <h1>Bring Haustiere schneller nach Hause.</h1>
+                    <p class="lead">Wer einen Hund oder eine Katze findet, lädt ein Foto hoch. PetConnect vergleicht es mit allen Vermisstenmeldungen und zeigt sofort, wem das Tier gehören könnte.</p>
 
-    <!-- Hero Section -->
-    <div class="hero">
-        <div class="container">
-            <h1>Dein Tier vermisst? Wir helfen!</h1>
-            <p>PetConnect nutzt künstliche Intelligenz um vermisste Hunde und Katzen wiederzufinden</p>
-            <div style="margin-top: 2rem;">
-                <a href="missing-pets.html" class="btn btn-primary" style="margin-right: 1rem;">
-                    Vermisste Tiere ansehen
-                </a>
-                <a href="found.html" class="btn btn-secondary">
-                    Tier gefunden?
-                </a>
-            </div>
-        </div>
-    </div>
+                    <div class="paths">
+                        <a class="path path-found" href="found.html">
+                            <svg class="path-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                            <div>
+                                <strong>Ich habe ein Tier gefunden</strong>
+                                <span>Foto hochladen, Fundort markieren – ohne Konto.</span>
+                            </div>
+                            <svg class="path-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                        <a class="path path-missing" href="dashboard.html">
+                            <svg class="path-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16" rx="4.5" ry="3.8"/><ellipse cx="6" cy="10.5" rx="1.9" ry="2.5"/><ellipse cx="9.6" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="14.4" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="18" cy="10.5" rx="1.9" ry="2.5"/></svg>
+                            <div>
+                                <strong>Mein Tier wird vermisst</strong>
+                                <span>Tier anlegen, als vermisst melden und Funde im Konto sehen.</span>
+                            </div>
+                            <svg class="path-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                    </div>
+                </div>
 
-    <!-- Features -->
-    <main class="container" style="margin-bottom: 60px;">
-        <section style="margin-bottom: 4rem;">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Unsere Features</h2>
-            
-            <div class="grid grid-3">
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--primary); margin-bottom: 1rem;">AI-Powered</h3>
-                    <p>PyTorch ResNet50 Bildanalyse für genaue Übereinstimmungen von Tierfotos</p>
-                </div>
-                
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--secondary); margin-bottom: 1rem;">Geotagging</h3>
-                    <p>Bestimmung des Fundortes mit GPS-Koordinaten und Kartendarstellung</p>
-                </div>
-                
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--accent); margin-bottom: 1rem;">Benachrichtigungen</h3>
-                    <p>Tierbesitzer werden automatisch bei möglichen Treffern informiert</p>
-                </div>
-                
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--success); margin-bottom: 1rem;">Sicher</h3>
-                    <p>Passwort-Hashing mit Bcrypt und sichere Session Management</p>
-                </div>
-                
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: var(--warning); margin-bottom: 1rem;">Schnell</h3>
-                    <p>Millisekunden-schnelle Bildverarbeitung mit GPU-Unterstützung</p>
-                </div>
-                
-                <div class="card" style="text-align: center;">
-                    <h3 style="color: #9B59B6; margin-bottom: 1rem;">Community</h3>
-                    <p>Finden, helfen und zusammen Tiere retten</p>
+                <div class="hero-board" id="heroBoard" aria-label="Aktuelle Vermisstenmeldungen">
+                    <div class="loading">Aktuelle Meldungen werden geladen …</div>
                 </div>
             </div>
         </section>
 
-        <!-- How it Works -->
-        <section style="background: white; padding: 40px; border-radius: 12px; margin-bottom: 4rem;">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Wie funktioniert PetConnect?</h2>
-            
-            <div class="grid grid-2">
-                <div>
-                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Für Besitzer</h3>
-                    <ol style="list-style: decimal; margin-left: 2rem; color: var(--dark);">
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Registriere</strong> dich kostenlos auf PetConnect
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Erstelle Profile</strong> für all deine Haustiere mit Foto
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Markiere als vermisst</strong> wenn dein Tier weg ist
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Erhalte Benachrichtigungen</strong> wenn die KI einen Match findet
-                        </li>
-                        <li>
-                            <strong>Kontaktiere Finder</strong> und wirde vereint mit deinem Tier!
-                        </li>
-                    </ol>
+        <section class="section">
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <h2>Weitere vermisste Tiere</h2>
+                        <p class="muted">Schau genau hin – vielleicht hast du eines dieser Tiere gesehen.</p>
+                    </div>
+                    <a class="btn btn-ghost" href="missing-pets.html">Alle vermissten Tiere</a>
                 </div>
-                
-                <div>
-                    <h3 style="color: var(--secondary); margin-bottom: 1rem;">Für Finder</h3>
-                    <ol style="list-style: decimal; margin-left: 2rem; color: var(--dark);">
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Fotografiere</strong> das gefundene Tier
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Lade das Bild hoch</strong> auf unserer "Tier gefunden" Seite
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Unsere AI</strong> vergleicht das Bild mit der Datenbank
-                        </li>
-                        <li style="margin-bottom: 1rem;">
-                            <strong>Erhalte Ergebnisse</strong> mit Kontaktdaten des Besitzers
-                        </li>
-                        <li>
-                            <strong>Kontaktiere</strong> den Besitzer und helfe dem Tier!
-                        </li>
-                    </ol>
-                </div>
+                <div class="posters" id="latestPosters"></div>
             </div>
         </section>
 
-        <!-- CTA -->
-        <section style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); 
-                        color: white; padding: 60px 40px; border-radius: 12px; text-align: center;">
-            <h2 style="color: white; margin-bottom: 1rem;">Bereit zu helfen?</h2>
-            <p style="font-size: 1.1rem; margin-bottom: 2rem; color: rgba(255,255,255,0.9);">
-                Beginne jetzt, Tiere zu retten und zu finden!
-            </p>
-            <div>
-                <a href="login.html" class="btn btn-primary" style="background: white; color: var(--primary); margin-right: 1rem;">
-                    Konto erstellen
-                </a>
-                <a href="found.html" class="btn btn-outline" style="border-color: white; color: white;">
-                    Tier gefunden melden
-                </a>
+        <section class="section" id="ablauf">
+            <div class="wrap">
+                <h2 style="margin-bottom: 1.5rem;">So funktioniert's</h2>
+                <div class="flows">
+                    <div class="panel flow">
+                        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Wenn du ein Tier findest</h3>
+                        <ol>
+                            <li><div><strong>Foto machen</strong><span>Am besten seitlich oder von vorne, bei gutem Licht.</span></div></li>
+                            <li><div><strong>Fundort markieren</strong><span>Auf der Karte tippen oder den eigenen Standort nehmen.</span></div></li>
+                            <li><div><strong>Besitzer kontaktieren</strong><span>Du siehst passende Vermisstenmeldungen mit Kontaktdaten. Die Besitzer sehen deine Meldung in ihrem Konto.</span></div></li>
+                        </ol>
+                    </div>
+                    <div class="panel flow">
+                        <h3><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16" rx="4.5" ry="3.8"/><ellipse cx="6" cy="10.5" rx="1.9" ry="2.5"/><ellipse cx="9.6" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="14.4" cy="6.8" rx="1.9" ry="2.5"/><ellipse cx="18" cy="10.5" rx="1.9" ry="2.5"/></svg>Wenn dein Tier vermisst wird</h3>
+                        <ol>
+                            <li><div><strong>Kostenloses Konto anlegen</strong><span>Und dein Tier mit einem aktuellen Foto eintragen – am besten schon heute.</span></div></li>
+                            <li><div><strong>Als vermisst melden</strong><span>Ort und Datum angeben. Dein Tier erscheint sofort in der öffentlichen Liste.</span></div></li>
+                            <li><div><strong>Funde prüfen</strong><span>Lädt jemand ein ähnliches Foto hoch, siehst du es mit Fundort und Kontakt in deinem Konto.</span></div></li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 PetConnect - Wiederfindung vermisster Haustiere</p>
-        <p><a href="#">Datenschutz</a> | <a href="#">Impressum</a></p>
-    </footer>
-
     <script src="../js/api.js"></script>
+    <script>
+        let pets = [];
+
+        async function loadLatest() {
+            const board = document.getElementById('heroBoard');
+            const grid = document.getElementById('latestPosters');
+            try {
+                const response = await api.get('pets/missing', { limit: 6, offset: 0 });
+                pets = response.pets || [];
+            } catch (e) {
+                board.innerHTML = '';
+                grid.innerHTML = `<div class="empty" style="grid-column: 1/-1"><h3>Meldungen konnten nicht geladen werden</h3><p>${esc(e.message)}</p></div>`;
+                return;
+            }
+
+            if (pets.length === 0) {
+                board.innerHTML = `<div class="empty">${icon('paw')}<h3>Gerade wird kein Tier vermisst</h3><p>Trag dein Tier vorsorglich ein, dann bist du im Ernstfall in einer Minute startklar.</p><a class="btn btn-primary" href="login.html">Konto anlegen</a></div>`;
+                grid.closest('.section').hidden = true;
+                return;
+            }
+
+            board.innerHTML = pets.slice(0, 2).map(posterHTML).join('');
+            // Die ersten zwei hängen schon oben – unten nur weitere Meldungen zeigen
+            const more = pets.slice(2);
+            if (more.length) {
+                grid.innerHTML = more.map(posterHTML).join('');
+            } else {
+                grid.closest('.section').hidden = true;
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const poster = e.target.closest('.poster');
+            if (!poster) return;
+            const pet = pets.find(p => String(p.id) === poster.dataset.petId);
+            if (pet) openModal(missingPetDetailHTML(pet));
+        });
+
+        loadLatest();
+    </script>
 </body>
 </html>

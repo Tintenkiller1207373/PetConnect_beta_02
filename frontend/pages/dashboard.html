@@ -3,370 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - PetConnect</title>
+    <title>Meine Tiere – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
-                    <li><a href="found.html">Tier Gefunden?</a></li>
-                    <li><a href="dashboard.html" style="color: var(--primary);"><strong>Dashboard</strong></a></li>
-                    <li><a href="#" onclick="logout()">Logout</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
-        <div id="alerts"></div>
-        
-        <!-- Welcome Section -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<body data-page="dashboard">
+    <main class="wrap">
+        <div class="page-head section-head">
             <div>
-                <h1>Willkommen, <span id="userName">...</span>!</h1>
-                <p style="color: var(--muted);">Verwalte deine Haustiere und Vermisstenberichte</p>
+                <h1 id="greeting">Meine Tiere</h1>
+                <p class="lead">Hier verwaltest du deine Tiere und siehst Fundmeldungen, sobald jemand ein ähnliches Tier fotografiert.</p>
             </div>
-            <a href="add-pet.html" class="btn btn-primary">+ Tier hinzufügen</a>
+            <a class="btn btn-primary" href="add-pet.html" id="addPetBtn"></a>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-3" style="margin-bottom: 3rem;">
-            <div class="card" style="text-align: center; background: linear-gradient(135deg, #FF6B5A 0%, #FF8A7A 100%); color: white;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🐕</div>
-                <h3 id="totalPets" style="font-size: 2.5rem; margin: 0; color: white;">0</h3>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Registrierte Tiere</p>
-            </div>
-            
-            <div class="card" style="text-align: center; background: linear-gradient(135deg, #FFA500 0%, #FFB733 100%); color: white;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔍</div>
-                <h3 id="missingPets" style="font-size: 2.5rem; margin: 0; color: white;">0</h3>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Vermisst</p>
-            </div>
-            
-            <div class="card" style="text-align: center; background: linear-gradient(135deg, #28A745 0%, #3DBD5D 100%); color: white;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏠</div>
-                <h3 id="safePets" style="font-size: 2.5rem; margin: 0; color: white;">0</h3>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Zuhause</p>
-            </div>
-        </div>
+        <div id="matchesSection" hidden></div>
 
-        <!-- My Pets Section -->
-        <section>
-            <h2 style="margin-bottom: 1.5rem;">Meine Tiere</h2>
-            
-            <div id="loading" style="text-align: center; padding: 3rem;">
-                <div class="spinner"></div>
-                <p style="color: var(--muted); margin-top: 1rem;">Lade deine Tiere...</p>
-            </div>
-            
-            <div id="noPets" style="display: none; text-align: center; padding: 3rem; background: white; border-radius: 12px;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">🐾</div>
-                <h3>Noch keine Tiere registriert</h3>
-                <p style="color: var(--muted); margin-bottom: 2rem;">Füge dein erstes Haustier hinzu!</p>
-                <a href="add-pet.html" class="btn btn-primary">+ Erstes Tier hinzufügen</a>
-            </div>
-            
-            <div id="petsList" class="grid grid-2" style="display: none;">
-                <!-- Pets will be loaded here -->
-            </div>
-        </section>
+        <div class="two-col" style="margin-top: 1.5rem;">
+            <section aria-labelledby="petsTitle">
+                <h2 id="petsTitle" class="sr-only">Deine Tiere</h2>
+                <div id="petsList" class="pet-list"><div class="loading">Deine Tiere werden geladen …</div></div>
+            </section>
+
+            <aside class="panel">
+                <h3 class="panel-title">Deine Kontaktdaten</h3>
+                <p class="muted" style="margin-bottom: 1.25rem;">Die Telefonnummer steht auf deinen Vermisstenmeldungen, damit Finder dich direkt anrufen können.</p>
+                <div class="note note-warn" id="phoneWarning" hidden style="margin-bottom: 1.25rem;"></div>
+                <form id="profileForm" novalidate>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="firstName">Vorname</label>
+                            <input type="text" id="firstName" autocomplete="given-name">
+                        </div>
+                        <div class="field">
+                            <label for="lastName">Nachname</label>
+                            <input type="text" id="lastName" autocomplete="family-name">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="phone">Telefon</label>
+                        <input type="tel" id="phone" autocomplete="tel" placeholder="z. B. 0151 23456789">
+                    </div>
+                    <div class="field">
+                        <label for="location">Wohnort <span class="optional">(optional)</span></label>
+                        <input type="text" id="location" autocomplete="address-level2" placeholder="z. B. München">
+                    </div>
+                    <button type="submit" class="btn btn-ghost btn-block">Kontaktdaten speichern</button>
+                </form>
+            </aside>
+        </div>
     </main>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 PetConnect - Mit ❤️ und 🤖 entwickelt</p>
-        </div>
-    </footer>
 
     <script src="../js/api.js"></script>
     <script>
-        let currentUser = null;
+        let user = null;
         let pets = [];
 
-        // Check if logged in
-        async function checkAuth() {
-            console.log('checkAuth started');
-            console.log('Session Token:', session.sessionToken);
-            console.log('User ID:', session.userId);
-            
-            try {
-                const response = await api.get('/auth/check');
-                console.log('Auth check response:', response);
-                
-                if (!response.success || !response.data.is_logged_in) {
-                    console.log('Not logged in, clearing session and redirecting');
-                    const debugInfo = response.debug ? '\n\nRouter Debug:\n' + JSON.stringify(response.debug, null, 2) : '';
-                    const authDebug = response.data && response.data.debug ? '\n\nAuth Debug:\n' + JSON.stringify(response.data.debug, null, 2) : '';
-                    alert('DEBUG: Nicht eingeloggt!\nGrund: ' + (response.data?.reason || response.message || 'Unbekannt') + debugInfo + authDebug);
-                    
-                    // Verzögerung von 5 Sekunden
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                    
-                    session.clearSession();
-                    window.location.href = 'login.html';
-                    return;
-                }
-                currentUser = response.data.user;
-                console.log('Logged in as:', currentUser);
-                document.getElementById('userName').textContent = currentUser.username;
-                loadPets();
-            } catch (error) {
-                console.error('Auth check error:', error);
-                alert('DEBUG: API Fehler! ' + error.message);
-                
-                // Verzögerung von 5 Sekunden
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                
-                showAlert('Fehler beim Laden der Benutzerdaten', 'error');
-                session.clearSession();
-                window.location.href = 'login.html';
-            }
+        document.getElementById('addPetBtn').innerHTML = `${icon('plus')}Tier hinzufügen`;
+
+        async function init() {
+            user = await requireAuth();
+            if (!user) return;
+
+            document.getElementById('greeting').textContent = `Hallo, ${user.first_name || user.username}`;
+            document.getElementById('firstName').value = user.first_name || '';
+            document.getElementById('lastName').value = user.last_name || '';
+            document.getElementById('phone').value = user.phone || '';
+            document.getElementById('location').value = user.location || '';
+
+            await Promise.all([loadPets(), loadMatches()]);
         }
 
-        // Load user's pets
         async function loadPets() {
+            const list = document.getElementById('petsList');
             try {
-                const response = await api.get('/pets/my-pets');
-                
-                if (response.success) {
-                    pets = response.data.pets || response.data || [];
-                    displayPets();
-                    updateStats();
-                } else {
-                    showAlert(response.message || 'Fehler beim Laden der Tiere', 'error');
-                }
-            } catch (error) {
-                showAlert('Fehler beim Laden der Tiere', 'error');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+                const response = await api.get('pets/my-pets');
+                pets = response.data.pets || [];
+            } catch (e) {
+                list.innerHTML = `<div class="empty"><h3>Deine Tiere konnten nicht geladen werden</h3><p>${esc(e.message)}</p><button class="btn btn-ghost" onclick="loadPets()">Erneut versuchen</button></div>`;
+                return;
             }
+            renderPets();
+            updatePhoneWarning();
         }
 
-        // Display pets
-        function displayPets() {
-            const petsListEl = document.getElementById('petsList');
-            const noPetsEl = document.getElementById('noPets');
-            
-            console.log('=== DEBUG: displayPets ===');
-            console.log('Anzahl Tiere:', pets.length);
-            console.log('Tiere Daten:', pets);
-            
+        function renderPets() {
+            const list = document.getElementById('petsList');
             if (pets.length === 0) {
-                noPetsEl.style.display = 'block';
-                petsListEl.style.display = 'none';
+                list.innerHTML = `
+                    <div class="empty">
+                        ${icon('paw')}
+                        <h3>Noch kein Tier eingetragen</h3>
+                        <p>Leg dein Tier jetzt mit einem aktuellen Foto an. Wird es vermisst, ist die Meldung dann mit zwei Klicks raus.</p>
+                        <a class="btn btn-primary" href="add-pet.html">${icon('plus')}Erstes Tier eintragen</a>
+                    </div>`;
                 return;
             }
-            
-            petsListEl.style.display = 'grid';
-            noPetsEl.style.display = 'none';
-            
-            petsListEl.innerHTML = pets.map(pet => {
-                // Bildpfad: Falls es ein Dateiname ist, füge die vollständige URL hinzu
-                let imageSrc = pet.profile_image;
-                
-                console.log(`Tier: ${pet.name}, profile_image:`, pet.profile_image);
-                
-                // Kein Bild oder default.jpg -> SVG Fallback verwenden
-                if (!imageSrc || imageSrc === 'default.jpg' || imageSrc === 'null' || imageSrc.trim() === '') {
-                    imageSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Crect fill=%22%23e8f4f8%22 width=%22400%22 height=%22400%22/%3E%3Ctext x=%22200%22 y=%22200%22 text-anchor=%22middle%22 font-size=%22100%22 fill=%22%2364b5f6%22%3E🐾%3C/text%3E%3C/svg%3E';
-                } else if (imageSrc && !imageSrc.startsWith('http') && !imageSrc.startsWith('data:')) {
-                    // Vollständige URL mit dem Backend-Server
-                    imageSrc = '/uploads/pets/' + imageSrc;
-                }
-                
-                console.log(`Endgültiger Bildpfad für ${pet.name}:`, imageSrc);
-                
+
+            list.innerHTML = pets.map(pet => {
+                const missing = isMissing(pet);
+                const meta = [speciesLabel(pet.species), pet.breed, pet.age ? `${pet.age} Jahre` : ''].filter(Boolean).join(' · ');
                 return `
-                <div class="card">
-                    <div style="position: relative; width: 100%; padding-bottom: 75%; background: var(--light-bg); border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
-                        <img src="${imageSrc}" 
-                             alt="${pet.name}"
-                             style="position: absolute; width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Crect fill=%22%23e8f4f8%22 width=%22400%22 height=%22400%22/%3E%3Ctext x=%22200%22 y=%22200%22 text-anchor=%22middle%22 font-size=%22100%22 fill=%22%2364b5f6%22%3E🐾%3C/text%3E%3C/svg%3E'">
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 0.5rem 0; display: flex; justify-content: space-between; align-items: center;">
-                            ${pet.name}
-                            ${pet.is_missing ? '<span class="badge badge-danger">Vermisst</span>' : '<span class="badge badge-success">Zuhause</span>'}
-                        </h3>
-                        <p style="color: var(--muted); margin: 0;">
-                            ${pet.species === 'dog' ? 'Hund' : 'Katze'} • ${pet.breed || 'Unbekannte Rasse'}
-                        </p>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
-                        <div><strong>Alter:</strong> ${pet.age || 'Unbekannt'}</div>
-                        <div><strong>Farbe:</strong> ${pet.color || 'Unbekannt'}</div>
-                    </div>
-                    
-                    ${pet.distinguishing_features ? `
-                        <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">
-                            ${pet.distinguishing_features}
-                        </p>
-                    ` : ''}
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        ${!pet.is_missing ? `
-                            <button onclick="reportMissing(${pet.id})" class="btn btn-warning" style="font-size: 0.9rem;">
-                                Vermisst
-                            </button>
-                        ` : `
-                            <button onclick="markFound(${pet.id})" class="btn btn-success" style="font-size: 0.9rem;">
-                                Gefunden
-                            </button>
-                        `}
-                        <button onclick="viewPet(${pet.id})" class="btn btn-secondary" style="font-size: 0.9rem;">
-                            Details
-                        </button>
-                    </div>
-                    <button onclick="deletePet(${pet.id}, '${pet.name}')" class="btn btn-danger" style="width: 100%; font-size: 0.9rem;">
-                        Löschen
-                    </button>
-                </div>
-            `}).join('');
+                    <article class="pet-row">
+                        ${photoTag(petPhotoUrl(pet), pet.name)}
+                        <div>
+                            <h3>${esc(pet.name)} ${missing
+                                ? '<span class="status status-missing">Vermisst</span>'
+                                : '<span class="status status-home">Zuhause</span>'}</h3>
+                            <p class="muted">${esc(meta)}</p>
+                        </div>
+                        <div class="actions">
+                            ${missing
+                                ? `<button class="btn btn-home btn-sm" data-action="found" data-id="${esc(pet.id)}">${icon('check')}Wieder zuhause</button>`
+                                : `<a class="btn btn-danger btn-sm" href="report-missing.html?petId=${encodeURIComponent(pet.id)}">Als vermisst melden</a>`}
+                            <button class="btn btn-ghost btn-sm" data-action="details" data-id="${esc(pet.id)}">Details</button>
+                        </div>
+                    </article>`;
+            }).join('');
         }
 
-        // Update statistics
-        function updateStats() {
-            const total = pets.length;
-            const missing = pets.filter(p => p.is_missing).length;
-            const safe = total - missing;
-            
-            document.getElementById('totalPets').textContent = total;
-            document.getElementById('missingPets').textContent = missing;
-            document.getElementById('safePets').textContent = safe;
-        }
-
-        // Report pet as missing
-        async function reportMissing(petId) {
-            window.location.href = `report-missing.html?petId=${petId}`;
-        }
-
-        // Mark pet as found
-        async function markFound(petId) {
-            if (!confirm('Möchtest du dieses Tier wirklich als gefunden markieren?')) {
+        async function loadMatches() {
+            const section = document.getElementById('matchesSection');
+            let matches = [];
+            try {
+                matches = (await api.get('pets/matches')).matches || [];
+            } catch (e) {
+                return; // Fundmeldungen sind optional, Rest der Seite bleibt nutzbar
+            }
+            if (matches.length === 0) {
+                section.hidden = true;
                 return;
             }
-            
+
+            section.hidden = false;
+            section.innerHTML = `
+                <div class="match-alert">
+                    <h2>${matches.length === 1 ? 'Eine mögliche Sichtung' : `${matches.length} mögliche Sichtungen`}</h2>
+                    <p>Jemand hat ein Tier fotografiert, das deinem ähnlich sieht. Vergleiche das Foto und melde dich beim Finder.</p>
+                    ${matches.map(m => {
+                        const pct = Math.round(Number(m.similarity_score) * 100);
+                        const contact = m.finder_contact || '';
+                        const contactLink = /@/.test(contact) ? `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` : esc(contact);
+                        const mapLink = m.latitude && m.longitude
+                            ? ` · <a href="https://www.openstreetmap.org/?mlat=${encodeURIComponent(m.latitude)}&mlon=${encodeURIComponent(m.longitude)}#map=17/${encodeURIComponent(m.latitude)}/${encodeURIComponent(m.longitude)}" target="_blank" rel="noopener">Karte öffnen</a>`
+                            : '';
+                        return `
+                            <article class="match">
+                                ${photoTag('/' + m.image, 'Foto vom Finder')}
+                                <div>
+                                    <h3>Ähnlich wie ${esc(m.pet_name)}</h3>
+                                    <div class="similarity">
+                                        <div class="similarity-bar"><i style="width:${pct}%"></i></div>
+                                        <b>${pct} %</b><span class="muted">Ähnlichkeit</span>
+                                    </div>
+                                    <dl>
+                                        <dt>Gefunden am</dt><dd>${esc(formatDate(m.created_at))}</dd>
+                                        <dt>Fundort</dt><dd>${esc(formatPlace(m.location_found))}${mapLink}</dd>
+                                        ${contact ? `<dt>Finder</dt><dd>${contactLink}</dd>` : ''}
+                                        ${m.finder_phone ? `<dt>Telefon</dt><dd><a href="tel:${esc(m.finder_phone)}">${esc(m.finder_phone)}</a></dd>` : ''}
+                                        ${m.description ? `<dt>Notiz</dt><dd>${esc(m.description)}</dd>` : ''}
+                                    </dl>
+                                </div>
+                            </article>`;
+                    }).join('')}
+                </div>`;
+        }
+
+        function updatePhoneWarning() {
+            const warn = document.getElementById('phoneWarning');
+            const anyMissing = pets.some(isMissing);
+            const hasPhone = !!document.getElementById('phone').value.trim();
+            warn.hidden = !(anyMissing && !hasPhone);
+            warn.innerHTML = `${icon('alert')}<div>Dein Tier wird vermisst, aber du hast keine Telefonnummer hinterlegt. Finder können dich so nur schwer erreichen.</div>`;
+        }
+
+        function showDetails(pet) {
+            const facts = [
+                ['Tierart', speciesLabel(pet.species)],
+                ['Rasse', pet.breed],
+                ['Farbe', pet.color],
+                ['Alter', pet.age ? `${pet.age} Jahre` : ''],
+                ['Gewicht', Number(pet.weight) ? `${Number(pet.weight).toLocaleString('de-DE')} kg` : ''],
+                ['Mikrochip', pet.microchip_id],
+                ['Eingetragen', formatDate(pet.created_at)]
+            ].filter(([, v]) => v);
+
+            openModal(`
+                ${photoTag(petPhotoUrl(pet), pet.name, 'class="modal-photo"')}
+                <div class="modal-body">
+                    ${isMissing(pet) ? '<span class="status status-missing">Vermisst</span>' : '<span class="status status-home">Zuhause</span>'}
+                    <h2 class="mt-1">${esc(pet.name)}</h2>
+                    <dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+                    ${pet.distinguishing_features ? `<h4>Besondere Merkmale</h4><p class="muted">${esc(pet.distinguishing_features)}</p>` : ''}
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <button class="btn-link" data-action="delete" data-id="${esc(pet.id)}">${esc(pet.name)} löschen</button>
+                        ${isMissing(pet)
+                            ? `<button class="btn btn-home" data-action="found" data-id="${esc(pet.id)}">${icon('check')}Wieder zuhause</button>`
+                            : `<a class="btn btn-danger" href="report-missing.html?petId=${encodeURIComponent(pet.id)}">Als vermisst melden</a>`}
+                    </div>
+                </div>`);
+        }
+
+        async function markFound(pet, button) {
+            if (!confirm(`Ist ${pet.name} wieder zuhause? Die Vermisstenmeldung wird dann aus der öffentlichen Liste entfernt.`)) return;
+            setBusy(button, true, 'Wird gespeichert …');
             try {
-                const response = await api.put(`/pets/${petId}/found`);
-                if (response.success) {
-                    showAlert('Tier wurde als gefunden markiert! 🎉', 'success');
-                    loadPets();
-                } else {
-                    showAlert(response.message || 'Fehler beim Markieren', 'error');
-                }
-            } catch (error) {
-                showAlert('Fehler beim Markieren', 'error');
+                await api.put(`pets/${pet.id}/found`);
+                closeModal();
+                toast(`Schön, dass ${pet.name} wieder da ist! Die Meldung ist entfernt.`, 'success');
+                await Promise.all([loadPets(), loadMatches()]);
+            } catch (e) {
+                toast(e.message, 'error');
+                setBusy(button, false);
             }
         }
 
-        // Delete pet
-        async function deletePet(petId, petName) {
-            if (!confirm(`Möchtest du ${petName} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!`)) {
-                return;
-            }
-            
+        async function deletePet(pet, button) {
+            if (!confirm(`${pet.name} endgültig löschen? Profil, Fotos und Vermisstenmeldungen werden entfernt. Das lässt sich nicht rückgängig machen.`)) return;
+            setBusy(button, true, 'Wird gelöscht …');
             try {
-                const response = await api.post('/pets/delete', { pet_id: petId });
-                
-                if (response.success) {
-                    showAlert(`${petName} wurde erfolgreich gelöscht.`, 'success');
-                    loadPets();
-                } else {
-                    showAlert(response.message || 'Fehler beim Löschen', 'error');
-                }
-            } catch (error) {
-                showAlert('Fehler beim Löschen: ' + error.message, 'error');
+                await api.post('pets/delete', { pet_id: pet.id });
+                closeModal();
+                toast(`${pet.name} wurde gelöscht.`, 'success');
+                await Promise.all([loadPets(), loadMatches()]);
+            } catch (e) {
+                toast(e.message, 'error');
+                setBusy(button, false);
             }
         }
-        
-        // View pet details
-        function viewPet(petId) {
-            // TODO: Create pet-details.html
-            showAlert('Detail-Ansicht kommt bald!', 'info');
-        }
 
-        // Logout
-        async function logout() {
+        document.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-action][data-id]');
+            if (!button) return;
+            const pet = pets.find(p => String(p.id) === button.dataset.id);
+            if (!pet) return;
+            if (button.dataset.action === 'details') showDetails(pet);
+            if (button.dataset.action === 'found') markFound(pet, button);
+            if (button.dataset.action === 'delete') deletePet(pet, button);
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button[type="submit"]');
+            setBusy(button, true, 'Wird gespeichert …');
             try {
-                await api.post('/auth/logout');
-            } catch (error) {
-                // Ignore errors
+                await api.post('auth/profile', {
+                    first_name: document.getElementById('firstName').value.trim(),
+                    last_name: document.getElementById('lastName').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    location: document.getElementById('location').value.trim()
+                });
+                toast('Kontaktdaten gespeichert.', 'success');
+                updatePhoneWarning();
+            } catch (err) {
+                toast(err.message, 'error');
+            } finally {
+                setBusy(button, false);
             }
-            window.location.href = 'login.html';
-        }
+        });
 
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const alertsEl = document.getElementById('alerts');
-            const alertClass = {
-                'success': 'alert-success',
-                'error': 'alert-error',
-                'warning': 'alert-warning',
-                'info': 'alert-info'
-            }[type] || 'alert-info';
-            
-            const alertHtml = `
-                <div class="alert ${alertClass}" style="margin-bottom: 1rem;">
-                    ${message}
-                </div>
-            `;
-            alertsEl.innerHTML = alertHtml;
-            
-            setTimeout(() => {
-                alertsEl.innerHTML = '';
-            }, 5000);
-        }
-
-        // Initialize
-        checkAuth();
+        init();
     </script>
-
-    <style>
-        .spinner {
-            border: 4px solid var(--light-bg);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: 20px;
-        }
-        
-        .badge-success {
-            background: var(--success);
-            color: white;
-        }
-        
-        .badge-danger {
-            background: var(--danger);
-            color: white;
-        }
-    </style>
 </body>
 </html>

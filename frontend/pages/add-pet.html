@@ -3,276 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tier Hinzufügen - PetConnect</title>
+    <title>Tier eintragen – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
+<body data-page="dashboard">
+    <main class="wrap wrap-narrow">
+        <div class="page-head">
+            <h1>Tier eintragen</h1>
+            <p class="lead">Mit einem guten Foto erkennt PetConnect dein Tier wieder, wenn jemand es findet und fotografiert.</p>
+        </div>
+
+        <form id="addPetForm" class="panel" novalidate>
+            <div class="step">
+                <div class="step-num" aria-hidden="true">1</div>
+                <div>
+                    <h3>Foto</h3>
+                    <p class="muted">Das ganze Tier, seitlich oder von vorne, bei Tageslicht. Kein Gruppenfoto.</p>
+                    <label class="dropzone" id="dropzone">
+                        <span class="dz-icon"></span>
+                        <strong>Foto auswählen</strong>
+                        <span class="muted">oder hierher ziehen · JPG, PNG, GIF bis 10 MB</span>
+                        <input type="file" id="photo" accept="image/jpeg,image/png,image/gif">
+                    </label>
                 </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
-                    <li><a href="found.html">Tier Gefunden?</a></li>
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="#" onclick="logout()">Logout</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <div style="margin-bottom: 2rem;">
-                <h1>➕ Neues Tier hinzufügen</h1>
-                <p style="color: var(--muted);">Registriere dein Haustier für mehr Sicherheit</p>
             </div>
 
-            <div id="alerts"></div>
-
-            <div class="card">
-                <form id="addPetForm" enctype="multipart/form-data">
-                    <!-- Basic Information -->
-                    <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Grundinformationen</h3>
-                    
-                    <div class="form-group">
-                        <label for="petName">Name des Tieres *</label>
-                        <input type="text" id="petName" name="name" required placeholder="z.B. Bella, Max, Luna...">
+            <div class="step">
+                <div class="step-num" aria-hidden="true">2</div>
+                <div>
+                    <h3>Wer ist es?</h3>
+                    <p class="muted">Pflichtfelder sind nur Name und Tierart.</p>
+                    <div class="field">
+                        <label for="petName">Name</label>
+                        <input type="text" id="petName" required placeholder="z. B. Luna">
                     </div>
-
-                    <div class="grid grid-2">
-                        <div class="form-group">
-                            <label for="species">Tierart *</label>
-                            <select id="species" name="species" required>
-                                <option value="">Bitte wählen...</option>
-                                <option value="dog">Hund</option>
-                                <option value="cat">Katze</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="breed">Rasse</label>
-                            <input type="text" id="breed" name="breed" placeholder="z.B. Golden Retriever, Perser...">
+                    <div class="field">
+                        <span class="field-label" id="speciesLabel">Tierart</span>
+                        <div class="choice" role="radiogroup" aria-labelledby="speciesLabel">
+                            <input type="radio" name="species" id="speciesDog" value="dog">
+                            <label for="speciesDog" data-icon="dog">Hund</label>
+                            <input type="radio" name="species" id="speciesCat" value="cat">
+                            <label for="speciesCat" data-icon="cat">Katze</label>
                         </div>
                     </div>
-
-                    <div class="grid grid-2">
-                        <div class="form-group">
-                            <label for="age">Alter (Jahre)</label>
-                            <input type="number" id="age" name="age" min="0" max="30" placeholder="z.B. 3">
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="breed">Rasse <span class="optional">(optional)</span></label>
+                            <input type="text" id="breed" placeholder="z. B. Mischling">
                         </div>
-
-                        <div class="form-group">
-                            <label for="weight">Gewicht (kg)</label>
-                            <input type="number" id="weight" name="weight" min="0" max="100" step="0.1" placeholder="z.B. 15.5">
+                        <div class="field">
+                            <label for="color">Fellfarbe <span class="optional">(optional)</span></label>
+                            <input type="text" id="color" placeholder="z. B. grau getigert">
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="color">Farbe/Fellfarbe</label>
-                        <input type="text" id="color" name="color" placeholder="z.B. Braun-weiß, Grau getigert...">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="microchipId">Mikrochip-ID (falls vorhanden)</label>
-                        <input type="text" id="microchipId" name="microchip_id" placeholder="z.B. 276098765432109">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="features">Besondere Merkmale</label>
-                        <textarea id="features" name="distinguishing_features" rows="3" placeholder="z.B. Weißer Fleck auf der Brust, fehlendes Stück am rechten Ohr..."></textarea>
-                        <small style="color: var(--muted);">Diese Informationen helfen bei der Wiedererkennung</small>
-                    </div>
-
-                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);">
-
-                    <!-- Photo Upload -->
-                    <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Profilbild *</h3>
-                    
-                    <div class="form-group">
-                        <label for="profileImage">Hauptfoto hochladen</label>
-                        <input type="file" id="profileImage" name="profile_image" accept="image/*" required onchange="previewImage(this)">
-                        <small style="color: var(--muted);">
-                            Das Foto wird für die KI-basierte Bilderkennung verwendet. 
-                            Für beste Ergebnisse: Gutes Licht, klare Sicht auf das Tier.
-                        </small>
-                    </div>
-
-                    <div id="imagePreview" style="display: none; margin-top: 1rem;">
-                        <p style="font-weight: 600; margin-bottom: 0.5rem;">Vorschau:</p>
-                        <div style="position: relative; width: 100%; max-width: 400px; padding-bottom: 75%; background: var(--light-bg); border-radius: 8px; overflow: hidden;">
-                            <img id="previewImg" src="" alt="Vorschau" style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="age">Alter in Jahren <span class="optional">(optional)</span></label>
+                            <input type="number" id="age" min="0" max="40" inputmode="numeric">
+                        </div>
+                        <div class="field">
+                            <label for="weight">Gewicht in kg <span class="optional">(optional)</span></label>
+                            <input type="number" id="weight" min="0" max="150" step="0.1" inputmode="decimal">
                         </div>
                     </div>
-
-                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);">
-
-                    <!-- Submit -->
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <a href="dashboard.html" class="btn btn-secondary">Abbrechen</a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            Tier registrieren
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
 
-            <!-- Info Box -->
-            <div class="alert alert-info" style="margin-top: 2rem;">
-                <h4 style="margin: 0 0 0.5rem 0;">Warum sollte ich mein Tier registrieren?</h4>
-                <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                    <li>Schnelle Wiedererkennung durch KI-Bildanalyse</li>
-                    <li>Automatische Benachrichtigung bei möglichen Funden</li>
-                    <li>Zentrale Datenbank für vermisste Tiere</li>
-                    <li>Erhöht die Chance, dein Tier wiederzufinden</li>
-                </ul>
+            <div class="step">
+                <div class="step-num" aria-hidden="true">3</div>
+                <div>
+                    <h3>Woran erkennt man es?</h3>
+                    <p class="muted">Diese Angaben helfen Findern, wenn das Foto allein nicht reicht.</p>
+                    <div class="field">
+                        <label for="features">Besondere Merkmale <span class="optional">(optional)</span></label>
+                        <textarea id="features" placeholder="z. B. weißer Fleck auf der Brust, Knick im rechten Ohr, rotes Halsband"></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="microchip">Mikrochip-Nummer <span class="optional">(optional)</span></label>
+                        <input type="text" id="microchip" inputmode="numeric" placeholder="15-stellige Nummer">
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div class="form-actions">
+                <a href="dashboard.html" class="btn btn-ghost">Abbrechen</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Tier eintragen</button>
+            </div>
+        </form>
     </main>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 PetConnect - Mit ❤️ und 🤖 entwickelt</p>
-        </div>
-    </footer>
 
     <script src="../js/api.js"></script>
     <script>
-        let uploadedImageFile = null;
+        let photo = null;
 
-        // Check if logged in
-        async function checkAuth() {
-            try {
-                const response = await api.get('/auth/check');
-                if (!response.success || !response.data.is_logged_in) {
-                    session.clearSession();
-                    window.location.href = 'login.html';
-                }
-            } catch (error) {
-                session.clearSession();
-                window.location.href = 'login.html';
-            }
-        }
+        document.querySelector('.dz-icon').outerHTML = icon('camera');
+        document.querySelectorAll('[data-icon]').forEach(el => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)));
+        setupPhotoInput(document.getElementById('dropzone'), (file) => { photo = file; });
 
-        // Preview uploaded image
-        function previewImage(input) {
-            const preview = document.getElementById('imagePreview');
-            const previewImg = document.getElementById('previewImg');
-            
-            if (input.files && input.files[0]) {
-                uploadedImageFile = input.files[0];
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.style.display = 'none';
-                uploadedImageFile = null;
-            }
-        }
+        requireAuth();
 
-        // Handle form submission
         document.getElementById('addPetForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 20px; height: 20px; border-width: 3px;"></span> Wird hochgeladen...';
-            
+            const name = document.getElementById('petName').value.trim();
+            const species = document.querySelector('input[name="species"]:checked')?.value;
+
+            if (!photo) {
+                toast('Bitte wähle ein Foto deines Tieres aus.', 'error');
+                document.getElementById('dropzone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            if (!name) {
+                toast('Bitte gib den Namen deines Tieres ein.', 'error');
+                document.getElementById('petName').focus();
+                return;
+            }
+            if (!species) {
+                toast('Bitte wähle aus, ob es ein Hund oder eine Katze ist.', 'error');
+                document.getElementById('speciesDog').focus();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('species', species);
+            formData.append('breed', document.getElementById('breed').value.trim());
+            formData.append('color', document.getElementById('color').value.trim());
+            formData.append('age', document.getElementById('age').value);
+            formData.append('weight', document.getElementById('weight').value);
+            formData.append('distinguishing_features', document.getElementById('features').value.trim());
+            formData.append('microchip_id', document.getElementById('microchip').value.trim());
+            formData.append('profile_image', photo);
+
+            const button = document.getElementById('submitBtn');
+            setBusy(button, true, 'Wird gespeichert …');
             try {
-                const formData = new FormData();
-                
-                // Basic data
-                formData.append('name', document.getElementById('petName').value);
-                formData.append('species', document.getElementById('species').value);
-                formData.append('breed', document.getElementById('breed').value || '');
-                formData.append('age', document.getElementById('age').value || '');
-                formData.append('weight', document.getElementById('weight').value || '');
-                formData.append('color', document.getElementById('color').value || '');
-                formData.append('microchip_id', document.getElementById('microchipId').value || '');
-                formData.append('distinguishing_features', document.getElementById('features').value || '');
-                
-                // Profile image
-                if (uploadedImageFile) {
-                    formData.append('profile_image', uploadedImageFile);
-                }
-                
-                const response = await api.postFormData('/pets/register', formData);
-                
-                if (response.success) {
-                    showAlert(`${response.data.pet.name} wurde erfolgreich registriert!`, 'success');
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1500);
-                } else {
-                    showAlert(response.message || 'Fehler beim Registrieren', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Tier registrieren';
-                }
-            } catch (error) {
-                showAlert('Fehler beim Registrieren: ' + error.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Tier registrieren';
+                await api.request('pets/register', { method: 'POST', body: formData });
+                toast(`${name} ist eingetragen.`, 'success');
+                setTimeout(() => { location.href = 'dashboard.html'; }, 900);
+            } catch (err) {
+                toast(err.message, 'error');
+                setBusy(button, false);
             }
         });
-
-        // Logout
-        async function logout() {
-            try {
-                await api.post('/auth/logout');
-            } catch (error) {
-                // Ignore errors
-            }
-            window.location.href = 'login.html';
-        }
-
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const alertsEl = document.getElementById('alerts');
-            const alertClass = {
-                'success': 'alert-success',
-                'error': 'alert-error',
-                'warning': 'alert-warning',
-                'info': 'alert-info'
-            }[type] || 'alert-info';
-            
-            const alertHtml = `
-                <div class="alert ${alertClass}" style="margin-bottom: 1rem;">
-                    ${message}
-                </div>
-            `;
-            alertsEl.innerHTML = alertHtml;
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // Initialize
-        checkAuth();
     </script>
-
-    <style>
-        .spinner {
-            border: 4px solid var(--light-bg);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </body>
 </html>

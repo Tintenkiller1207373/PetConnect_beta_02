@@ -3,286 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vermisste Tiere - PetConnect</title>
+    <title>Vermisste Tiere – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="missing-pets.html" style="color: var(--primary);"><strong>Vermisste Tiere</strong></a></li>
-                    <li><a href="found.html">Tier Gefunden?</a></li>
-                    <li><a href="login.html">Login</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Hero Section -->
-    <div class="hero">
-        <div class="container">
-            <h1>Vermisste Tiere</h1>
-            <p>Alle Haustiere die aktuell vermisst werden - vielleicht kannst du helfen</p>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <main class="container" style="margin-bottom: 60px;">
-        <!-- Filters -->
-        <div class="card" style="margin-bottom: 2rem;">
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <input type="text" id="searchInput" placeholder="Nach Name suchen..." 
-                       style="flex: 1; min-width: 200px;">
-                
-                <select id="speciesFilter" style="min-width: 150px;">
-                    <option value="">Alle Tierarten</option>
-                    <option value="dog">Hunde</option>
-                    <option value="cat">Katzen</option>
-                </select>
-                
-                <button class="btn btn-primary" onclick="loadMissingPets()">
-                    Suchen
-                </button>
+<body data-page="missing">
+    <main class="wrap">
+        <div class="page-head section-head">
+            <div>
+                <h1>Vermisste Tiere</h1>
+                <p class="lead">Diese Hunde und Katzen werden gerade gesucht. Hast du eines gesehen? Tippe auf die Meldung für Details und Kontakt.</p>
             </div>
         </div>
 
-        <!-- Pets Grid -->
-        <div id="petsContainer" class="grid grid-3">
-            <div class="loader" style="grid-column: 1/-1;">
-                <div class="spinner"></div>
-                <p>Lade vermisste Tiere...</p>
+        <div class="filters" role="search">
+            <div class="search">
+                <span class="search-icon"></span>
+                <label for="searchInput" class="sr-only">Suchen</label>
+                <input type="search" id="searchInput" placeholder="Name, Rasse oder Ort">
+            </div>
+            <div class="chips" role="group" aria-label="Tierart">
+                <button type="button" data-species="" aria-pressed="true">Alle</button>
+                <button type="button" data-species="dog" aria-pressed="false">Hunde</button>
+                <button type="button" data-species="cat" aria-pressed="false">Katzen</button>
             </div>
         </div>
 
-        <!-- Pagination -->
-        <div style="text-align: center; margin-top: 3rem;">
-            <button class="btn btn-outline" id="loadMoreBtn" onclick="loadMorePets()" style="display: none;">
-                Mehr Tiere laden
-            </button>
-            <p id="petsCountText" style="margin-top: 1rem; color: var(--border); font-size: 0.9rem;"></p>
+        <div id="posters" class="posters"><div class="loading" style="grid-column: 1/-1">Meldungen werden geladen …</div></div>
+
+        <div class="center mt-2">
+            <button class="btn btn-ghost" id="loadMoreBtn" hidden>Weitere Meldungen laden</button>
+            <p class="muted mt-1" id="countText" aria-live="polite"></p>
         </div>
     </main>
 
-    <!-- Info Modal -->
-    <div id="petDetailModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closePetDetail()">&times;</span>
-            <div id="petDetailContent"></div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 PetConnect - Wiederfindung vermisster Haustiere</p>
-        <p><a href="#">Datenschutz</a> | <a href="#">Impressum</a> | <a href="found.html">Tier gefunden?</a></p>
-    </footer>
-
     <script src="../js/api.js"></script>
     <script>
-        let currentOffset = 0;
-        const limit = 12;
+        const PAGE_SIZE = 24;
         let allPets = [];
+        let offset = 0;
+        let species = '';
 
-        async function loadMissingPets() {
-            currentOffset = 0;
-            allPets = [];
-            document.getElementById('petsContainer').innerHTML = `
-                <div class="loader" style="grid-column: 1/-1;">
-                    <div class="spinner"></div>
-                    <p>Lade vermisste Tiere...</p>
-                </div>
-            `;
-            await loadMorePets();
-        }
+        document.querySelector('.search-icon').outerHTML = icon('search');
 
-        async function loadMorePets() {
+        async function loadPage() {
+            const button = document.getElementById('loadMoreBtn');
             try {
-                const pets = await getMissingPets(limit, currentOffset);
-                
-                if (pets.length === 0 && currentOffset === 0) {
-                    document.getElementById('petsContainer').innerHTML = `
-                        <div style="grid-column: 1/-1; text-align: center;">
-                            <p style="font-size: 1.1rem; color: var(--border); margin-bottom: 0.75rem;">
-                                Aktuell sind keine Tiere als vermisst markiert.
-                            </p>
-                            <p style="color: var(--muted); margin-bottom: 1.25rem;">
-                                Melde zuerst im Dashboard ein Tier als vermisst, dann erscheint es hier.
-                            </p>
-                            <div style="display: inline-flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
-                                <a href="dashboard.html" class="btn btn-primary">Zum Dashboard</a>
-                                <a href="login.html" class="btn btn-secondary">Login</a>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-
+                const response = await api.get('pets/missing', { limit: PAGE_SIZE, offset });
+                const pets = response.pets || [];
                 allPets.push(...pets);
-
-                // Apply filters
-                const filtered = filterPets(allPets);
-                displayPets(filtered);
-
-                currentOffset += limit;
-                document.getElementById('loadMoreBtn').style.display = pets.length === limit ? 'inline-block' : 'none';
-                
-                document.getElementById('petsCountText').textContent = 
-                    `${filtered.length} Tiere angezeigt`;
-
-            } catch (error) {
-                console.error('Error loading pets:', error);
-                document.getElementById('petsContainer').innerHTML = `
-                    <div style="grid-column: 1/-1;" class="alert alert-error">
-                        Fehler beim Laden der Tiere
-                    </div>
-                `;
+                offset += pets.length;
+                button.hidden = pets.length < PAGE_SIZE;
+                render();
+            } catch (e) {
+                document.getElementById('posters').innerHTML =
+                    `<div class="empty" style="grid-column: 1/-1"><h3>Meldungen konnten nicht geladen werden</h3><p>${esc(e.message)}</p><button class="btn btn-ghost" onclick="location.reload()">Erneut versuchen</button></div>`;
             }
         }
 
-        function filterPets(pets) {
-            let filtered = [...pets];
-
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (searchTerm) {
-                filtered = filtered.filter(pet => 
-                    pet.name.toLowerCase().includes(searchTerm) ||
-                    pet.breed?.toLowerCase().includes(searchTerm)
-                );
-            }
-
-            const species = document.getElementById('speciesFilter').value;
-            if (species) {
-                filtered = filtered.filter(pet => pet.species === species);
-            }
-
-            return filtered;
+        function filtered() {
+            const term = document.getElementById('searchInput').value.trim().toLowerCase();
+            return allPets.filter(pet => {
+                if (species && pet.species !== species) return false;
+                if (!term) return true;
+                return [pet.name, pet.breed, pet.color, pet.location_last_seen]
+                    .some(v => v && String(v).toLowerCase().includes(term));
+            });
         }
 
-        function displayPets(pets) {
-            if (pets.length === 0) {
-                document.getElementById('petsContainer').innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center;">
-                        <p style="font-size: 1.1rem; color: var(--border);">
-                            Keine Tiere mit diesen Filtern gefunden
-                        </p>
-                    </div>
-                `;
+        function render() {
+            const container = document.getElementById('posters');
+            const pets = filtered();
+            const count = document.getElementById('countText');
+
+            if (allPets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty" style="grid-column: 1/-1">
+                        ${icon('paw')}
+                        <h3>Gerade wird kein Tier vermisst</h3>
+                        <p>Gute Nachrichten. Wenn du ein Tier gefunden hast, kannst du den Fund trotzdem melden – vielleicht sucht der Besitzer schon.</p>
+                        <a class="btn btn-signal" href="found.html">${icon('camera')}Fund melden</a>
+                    </div>`;
+                count.textContent = '';
                 return;
             }
 
-            let html = '';
-            pets.forEach(pet => {
-                const animalEmoji = pet.species === 'dog' ? '🐕' : '🐈';
-                const imagePath = pet.profile_image && pet.profile_image !== 'default.jpg' && pet.profile_image.trim() !== '' 
-                    ? `/uploads/pets/${pet.profile_image}` 
-                    : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23ECF0F1%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2240%22>' + animalEmoji + '</text></svg>';
-                
-                html += `
-                    <div class="pet-card">
-                        <img src="${imagePath}" alt="${pet.name}" class="pet-card-image" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23ECF0F1%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2240%22>${animalEmoji}</text></svg>'">
-                        <div class="pet-card-content">
-                            <div class="pet-card-badge missing">VERMISST</div>
-                            <div class="pet-card-title">${pet.name}</div>
-                            <div class="pet-card-meta">
-                                <p>${pet.species === 'dog' ? 'Hund' : 'Katze'} • ${pet.breed || 'Unbekannte Rasse'}</p>
-                                <p>${pet.age || '?'} Jahre alt</p>
-                                <p style="margin-top: 0.5rem; color: var(--danger);">
-                                    Ort: ${pet.location_last_seen || 'Ort unbekannt'}
-                                </p>
-                                <p style="font-size: 0.8rem;">
-                                    Vermisst seit: ${formatDate(pet.date_missing)}
-                                </p>
-                            </div>
-                            ${pet.reward_amount ? `<p style="color: var(--success); font-weight: 600;">Belohnung: €${pet.reward_amount}</p>` : ''}
-                            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" 
-                                    onclick="showPetDetail(${pet.id})">
-                                Details ansehen
-                            </button>
-                        </div>
-                    </div>
-                `;
+            if (pets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty" style="grid-column: 1/-1">
+                        <h3>Keine passende Meldung</h3>
+                        <p>Versuch einen anderen Suchbegriff oder zeig alle Tierarten an.</p>
+                    </div>`;
+            } else {
+                container.innerHTML = pets.map(posterHTML).join('');
+            }
+            count.textContent = pets.length === allPets.length
+                ? `${allPets.length} ${allPets.length === 1 ? 'Meldung' : 'Meldungen'}`
+                : `${pets.length} von ${allPets.length} Meldungen`;
+        }
+
+        document.getElementById('searchInput').addEventListener('input', render);
+
+        document.querySelectorAll('.chips button').forEach(button => {
+            button.addEventListener('click', () => {
+                species = button.dataset.species;
+                document.querySelectorAll('.chips button').forEach(b => b.setAttribute('aria-pressed', b === button));
+                render();
             });
-
-            document.getElementById('petsContainer').innerHTML = html;
-        }
-
-        function showPetDetail(petId) {
-            const pet = allPets.find(p => p.id === petId);
-            if (!pet) return;
-
-            const animalEmoji = pet.species === 'dog' ? '🐕' : '🐈';
-            const imagePath = pet.profile_image && pet.profile_image !== 'default.jpg' && pet.profile_image.trim() !== '' 
-                ? `/uploads/pets/${pet.profile_image}` 
-                : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22><rect fill=%22%23ECF0F1%22 width=%22300%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2280%22>' + animalEmoji + '</text></svg>';
-
-            const html = `
-                <img src="${imagePath}" alt="${pet.name}" 
-                     style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;"
-                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22><rect fill=%22%23ECF0F1%22 width=%22300%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2280%22>${animalEmoji}</text></svg>'">
-                
-                <h3 style="color: var(--primary); margin-bottom: 1rem;">${pet.name}</h3>
-                
-                <div style="background: var(--light); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <p><strong>Art:</strong> ${pet.species === 'dog' ? 'Hund' : 'Katze'}</p>
-                    <p><strong>Rasse:</strong> ${pet.breed || 'Unbekannt'}</p>
-                    <p><strong>Farbe:</strong> ${pet.color || 'Unbekannt'}</p>
-                    <p><strong>Alter:</strong> ${pet.age || '?'} Jahre</p>
-                    ${pet.weight ? `<p><strong>Gewicht:</strong> ${pet.weight} kg</p>` : ''}
-                </div>
-                
-                <div style="background: rgba(255, 107, 90, 0.05); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary); margin-bottom: 1rem;">
-                    <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Vermisstenfall</h4>
-                    <p><strong>Zuletzt gesehen:</strong> ${formatDate(pet.date_missing)}</p>
-                    <p><strong>Ort:</strong> ${pet.location_last_seen}</p>
-                    ${pet.description ? `<p><strong>Beschreibung:</strong> ${pet.description}</p>` : ''}
-                    ${pet.reward_amount ? `<p style="color: var(--success); font-weight: 600;">Belohnung: €${pet.reward_amount}</p>` : ''}
-                </div>
-                
-                <div style="background: rgba(74, 144, 226, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">Besitzer</h4>
-                    <p><strong>Name:</strong> ${pet.first_name} ${pet.last_name}</p>
-                    <p><strong>Telefon:</strong> <a href="tel:${pet.phone}">${pet.phone}</a></p>
-                </div>
-                
-                ${pet.distinguishing_features ? `
-                    <div style="background: rgba(255, 179, 71, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <h4 style="color: var(--accent); margin-bottom: 0.5rem;">Besonderheiten</h4>
-                        <p>${pet.distinguishing_features}</p>
-                    </div>
-                ` : ''}
-                
-                <a href="found.html" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                    Dieses Tier gefunden?
-                </a>
-            `;
-
-            document.getElementById('petDetailContent').innerHTML = html;
-            document.getElementById('petDetailModal').classList.add('active');
-        }
-
-        function closePetDetail() {
-            document.getElementById('petDetailModal').classList.remove('active');
-        }
-
-        // Event listeners for real-time filtering
-        document.getElementById('searchInput').addEventListener('keyup', () => {
-            const filtered = filterPets(allPets);
-            displayPets(filtered);
         });
 
-        document.getElementById('speciesFilter').addEventListener('change', () => {
-            const filtered = filterPets(allPets);
-            displayPets(filtered);
+        document.getElementById('loadMoreBtn').addEventListener('click', loadPage);
+
+        document.getElementById('posters').addEventListener('click', (e) => {
+            const poster = e.target.closest('.poster');
+            if (!poster) return;
+            const pet = allPets.find(p => String(p.id) === poster.dataset.petId);
+            if (pet) openModal(missingPetDetailHTML(pet));
         });
 
-        // Load pets on page load
-        window.addEventListener('load', loadMissingPets);
+        loadPage();
     </script>
 </body>
 </html>

@@ -3,276 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login / Registrierung - PetConnect</title>
+    <title>Anmelden – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        body.login-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 24px;
-            background: linear-gradient(135deg, #483D8B 0%, #6A5ACD 100%);
-            color: white;
-        }
-
-        .auth-shell {
-            width: 100%;
-            max-width: 900px;
-            padding: 20px;
-        }
-
-        .auth-logo-wrap {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .auth-logo {
-            height: 92px;
-            width: auto;
-            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
-        }
-
-        .auth-card {
-            background: rgba(255, 255, 255, 0.96);
-        }
-
-        .auth-card .btn {
-            width: 100%;
-        }
-
-        .auth-card .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        }
-
-        .auth-card .btn-secondary {
-            background: var(--secondary);
-        }
-
-        .auth-card .card-header h2 {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .auth-card input {
-            background: white;
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin-top: 1rem;
-            color: var(--border);
-        }
-
-        @media (max-width: 768px) {
-            .auth-shell {
-                padding: 0;
-            }
-        }
-    </style>
 </head>
-<body class="login-page">
-    <div class="auth-shell">
-        <div class="auth-logo-wrap">
-            <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="auth-logo">
-        </div>
-
-        <div class="grid grid-2">
-            <!-- Login Form -->
-            <div class="card auth-card">
-                <div class="card-header">
-                    <h2 style="color: var(--primary);">Login</h2>
-                </div>
-                
-                <div id="loginAlerts"></div>
-                
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="loginEmail">E-Mail</label>
-                        <input type="email" id="loginEmail" name="email" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="loginPassword">Passwort</label>
-                        <input type="password" id="loginPassword" name="password" required>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">
-                        Einloggen
-                    </button>
-                </form>
-                
-                <p class="auth-switch">
-                    Noch kein Konto? <a href="#" onclick="switchToRegister()">Jetzt registrieren</a>
-                </p>
+<body>
+    <main class="auth">
+        <aside class="auth-side">
+            <a class="brand" href="index.html" id="brandLink">PetConnect</a>
+            <div>
+                <h2>Dein Tier ist in einer Minute eingetragen.</h2>
+                <p>Mit einem Konto legst du Profile für deine Tiere an, meldest sie im Ernstfall als vermisst und siehst Fundmeldungen mit Foto und Fundort.</p>
             </div>
-            
-            <!-- Register Form -->
-            <div class="card auth-card" id="registerCard" style="display: none;">
-                <div class="card-header">
-                    <h2 style="color: var(--secondary);">Registrierung</h2>
-                </div>
-                
-                <div id="registerAlerts"></div>
-                
-                <form id="registerForm">
-                    <div class="form-group">
-                        <label for="registerUsername">Benutzername</label>
-                        <input type="text" id="registerUsername" name="username" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="registerEmail">E-Mail</label>
-                        <input type="email" id="registerEmail" name="email" required>
-                    </div>
-                    
-                    <div class="grid grid-2">
-                        <div class="form-group">
-                            <label for="registerFirstName">Vorname</label>
-                            <input type="text" id="registerFirstName" name="firstName">
-                        </div>
-                        <div class="form-group">
-                            <label for="registerLastName">Nachname</label>
-                            <input type="text" id="registerLastName" name="lastName">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="registerPassword">Passwort (min. 8 Zeichen)</label>
-                        <input type="password" id="registerPassword" name="password" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="registerPasswordConfirm">Passwort wiederholen</label>
-                        <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-secondary">
-                        Registrieren
-                    </button>
-                </form>
-                
-                <p class="auth-switch">
-                    Bereits registriert? <a href="#" onclick="switchToLogin()">Hier einloggen</a>
-                </p>
+            <div class="logo-card">
+                <img src="../assets/petconnect-logo-640.png" alt="PetConnect Logo">
             </div>
-        </div>
+        </aside>
 
-        <div style="text-align: center; margin-top: 3rem;">
-            <a href="index.html" style="color: white; font-weight: 600; text-decoration: none;">← Zurück zur Startseite</a>
-        </div>
-    </div>
+        <section class="auth-main">
+            <div class="auth-form">
+                <div class="tabs" role="tablist">
+                    <button type="button" role="tab" id="tabLogin" aria-selected="true" aria-controls="loginPanel">Anmelden</button>
+                    <button type="button" role="tab" id="tabRegister" aria-selected="false" aria-controls="registerPanel">Konto erstellen</button>
+                </div>
+
+                <div id="loginPanel" role="tabpanel" aria-labelledby="tabLogin">
+                    <h1>Willkommen zurück</h1>
+                    <p class="muted">Melde dich mit deiner E-Mail-Adresse an.</p>
+                    <form id="loginForm" novalidate>
+                        <div class="form-error" id="loginError" role="alert" hidden></div>
+                        <div class="field">
+                            <label for="loginEmail">E-Mail</label>
+                            <input type="email" id="loginEmail" autocomplete="email" required>
+                        </div>
+                        <div class="field">
+                            <label for="loginPassword">Passwort</label>
+                            <input type="password" id="loginPassword" autocomplete="current-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Anmelden</button>
+                    </form>
+                </div>
+
+                <div id="registerPanel" role="tabpanel" aria-labelledby="tabRegister" hidden>
+                    <h1>Konto erstellen</h1>
+                    <p class="muted">Kostenlos. Deine Kontaktdaten sehen andere nur, wenn du ein Tier als vermisst meldest.</p>
+                    <form id="registerForm" novalidate>
+                        <div class="form-error" id="registerError" role="alert" hidden></div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="registerFirstName">Vorname</label>
+                                <input type="text" id="registerFirstName" autocomplete="given-name">
+                            </div>
+                            <div class="field">
+                                <label for="registerLastName">Nachname</label>
+                                <input type="text" id="registerLastName" autocomplete="family-name">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="registerUsername">Benutzername</label>
+                            <input type="text" id="registerUsername" autocomplete="username" minlength="3" required>
+                        </div>
+                        <div class="field">
+                            <label for="registerEmail">E-Mail</label>
+                            <input type="email" id="registerEmail" autocomplete="email" required>
+                        </div>
+                        <div class="field">
+                            <label for="registerPassword">Passwort</label>
+                            <input type="password" id="registerPassword" autocomplete="new-password" minlength="8" required>
+                            <span class="hint">Mindestens 8 Zeichen.</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Konto erstellen</button>
+                    </form>
+                </div>
+
+                <p class="center mt-2"><a href="index.html">Zur Startseite</a></p>
+            </div>
+        </section>
+    </main>
 
     <script src="../js/api.js"></script>
     <script>
-        function switchToRegister() {
-            document.getElementById('loginForm').parentElement.style.display = 'none';
-            document.getElementById('registerCard').style.display = 'block';
+        document.getElementById('brandLink').insertAdjacentHTML('afterbegin', icon('logo'));
+
+        // Nur Seiten innerhalb der App als Weiterleitungsziel zulassen
+        function nextPage() {
+            const next = new URLSearchParams(location.search).get('next') || '';
+            return /^[a-z-]+\.html(\?[\w=&%-]*)?$/i.test(next) ? next : 'dashboard.html';
         }
-        
-        function switchToLogin() {
-            document.getElementById('loginForm').parentElement.style.display = 'block';
-            document.getElementById('registerCard').style.display = 'none';
+
+        if (session.isAuthenticated()) {
+            api.get('auth/check').then(r => {
+                if (r.data && r.data.is_logged_in) location.href = nextPage();
+            }).catch(() => {});
         }
-        
-        // Login Form Handler
+
+        const tabs = { login: document.getElementById('tabLogin'), register: document.getElementById('tabRegister') };
+        function showTab(name) {
+            tabs.login.setAttribute('aria-selected', name === 'login');
+            tabs.register.setAttribute('aria-selected', name === 'register');
+            document.getElementById('loginPanel').hidden = name !== 'login';
+            document.getElementById('registerPanel').hidden = name !== 'register';
+            document.querySelector(`#${name}Panel input`).focus();
+        }
+        tabs.login.addEventListener('click', () => showTab('login'));
+        tabs.register.addEventListener('click', () => showTab('register'));
+        if (location.hash === '#registrieren') showTab('register');
+
+        function showError(id, message) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.hidden = !message;
+        }
+
+        async function signIn(email, password) {
+            const response = await api.post('auth/login', { email, password });
+            session.set(response.session_token, response.user_id);
+            location.href = nextPage();
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
-            
+            if (!email || !password) {
+                showError('loginError', 'Bitte gib E-Mail und Passwort ein.');
+                return;
+            }
+            const button = e.submitter || e.target.querySelector('button[type="submit"]');
+            showError('loginError', '');
+            setBusy(button, true, 'Anmelden …');
             try {
-                const response = await api.post('auth/login', { email, password });
-                
-                if (response.success) {
-                    session.setSession(response.session_token, response.user_id);
-                    showLoginAlert('Login erfolgreich!', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                } else {
-                    showLoginAlert(response.message, 'error');
-                }
+                await signIn(email, password);
             } catch (error) {
-                showLoginAlert('Login-Fehler: ' + error.message, 'error');
+                const msg = /nicht gefunden|Falsches Passwort/.test(error.message)
+                    ? 'E-Mail oder Passwort ist falsch.'
+                    : error.message;
+                showError('loginError', msg);
+                setBusy(button, false);
             }
         });
-        
-        // Register Form Handler
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const username = document.getElementById('registerUsername').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
-            const firstName = document.getElementById('registerFirstName').value;
-            const lastName = document.getElementById('registerLastName').value;
-            
-            // Validate passwords match
-            if (password !== passwordConfirm) {
-                showRegisterAlert('Passwörter stimmen nicht überein', 'error');
-                return;
-            }
-            
-            if (password.length < 8) {
-                showRegisterAlert('Passwort muss mindestens 8 Zeichen lang sein', 'error');
-                return;
-            }
-            
-            const success = await register(username, email, password, firstName, lastName);
-            if (success) {
-                document.getElementById('registerForm').reset();
-                setTimeout(() => {
-                    switchToLogin();
-                }, 2000);
+            const data = {
+                username: document.getElementById('registerUsername').value.trim(),
+                email: document.getElementById('registerEmail').value.trim(),
+                password: document.getElementById('registerPassword').value,
+                first_name: document.getElementById('registerFirstName').value.trim(),
+                last_name: document.getElementById('registerLastName').value.trim()
+            };
+            if (data.username.length < 3) return showError('registerError', 'Der Benutzername braucht mindestens 3 Zeichen.');
+            if (!/^\S+@\S+\.\S+$/.test(data.email)) return showError('registerError', 'Bitte gib eine gültige E-Mail-Adresse ein.');
+            if (data.password.length < 8) return showError('registerError', 'Das Passwort braucht mindestens 8 Zeichen.');
+
+            const button = e.submitter || e.target.querySelector('button[type="submit"]');
+            showError('registerError', '');
+            setBusy(button, true, 'Konto wird erstellt …');
+            try {
+                await api.post('auth/register', data);
+                // Direkt anmelden, damit niemand das Passwort zweimal eintippen muss
+                await signIn(data.email, data.password);
+            } catch (error) {
+                showError('registerError', error.message);
+                setBusy(button, false);
             }
         });
-        
-        // Custom alert functions
-        function showLoginAlert(message, type) {
-            const container = document.getElementById('loginAlerts');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.innerHTML = `
-                <span>${message}</span>
-                <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
-            `;
-            container.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
-        
-        function showRegisterAlert(message, type) {
-            const container = document.getElementById('registerAlerts');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.innerHTML = `
-                <span>${message}</span>
-                <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
-            `;
-            container.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
-        
-        // Override showAlert to use login/register alerts
-        const originalShowAlert = showAlert;
-        showAlert = function(message, type) {
-            if (document.getElementById('registerCard').style.display !== 'none') {
-                showRegisterAlert(message, type);
-            } else {
-                showLoginAlert(message, type);
-            }
-        }
-        
-        // Don't check existing session - let user login
     </script>
 </body>
 </html>

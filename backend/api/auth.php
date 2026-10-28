@@ -112,21 +112,18 @@ try {
                     'data' => [
                         'is_logged_in' => true,
                         'user' => $user_data
-                    ],
-                    'debug' => $debug_info
+                    ]
                 ];
             } else {
                 $response = [
                     'success' => true,
-                    'data' => ['is_logged_in' => false, 'reason' => 'Invalid session token'],
-                    'debug' => $debug_info
+                    'data' => ['is_logged_in' => false, 'reason' => 'Invalid session token']
                 ];
             }
         } else {
             $response = [
                 'success' => true,
-                'data' => ['is_logged_in' => false, 'reason' => 'No session token provided'],
-                'debug' => $debug_info
+                'data' => ['is_logged_in' => false, 'reason' => 'No session token provided']
             ];
         }
     }

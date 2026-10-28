@@ -60,12 +60,7 @@ try {
     $user_id = $user->validateSession($session_token);
     
     if (!$user_id && !$is_public_missing_list) {
-        $response = ['success' => false, 'message' => 'Unauthorized', 'debug' => [
-            'token_found' => !empty($session_token),
-            'token_length' => strlen($session_token),
-            'has_post' => !empty($_POST),
-            'post_keys' => array_keys($_POST)
-        ]];
+        $response = ['success' => false, 'message' => 'Bitte melde dich an'];
     }
     elseif ($path === 'register' && $method === 'POST') {
         // POST /api/pets/register - Tier erstellen mit Bild
@@ -139,6 +134,13 @@ try {
                 'pets' => $pets_data,
                 'total' => count($pets_data)
             ]
+        ];
+    }
+    elseif ($path === 'matches' && $method === 'GET') {
+        // GET /api/pets/matches - Fundmeldungen zu eigenen vermissten Tieren
+        $response = [
+            'success' => true,
+            'matches' => $pet->getMatchesForUser($user_id)
         ];
     }
     elseif (preg_match('/^(\d+)$/', $path, $matches) && $method === 'GET') {

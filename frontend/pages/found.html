@@ -3,665 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tier gefunden - PetConnect</title>
+    <title>Tier gefunden – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
     <link rel="stylesheet" href="../css/styles.css">
-    <!-- Leaflet CSS für die Karte (lokal) -->
-    <link rel="stylesheet" href="../assets/leaflet/leaflet.css" />
-    <style>
-        #map {
-            height: 400px;
-            width: 100%;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border: 2px solid var(--border);
-            background: #e8f4f8;
-            position: relative;
-            z-index: 1;
-        }
-        
-        #map::after {
-            content: 'Karte wird geladen...';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #666;
-            font-size: 1rem;
-            z-index: 0;
-        }
-        
-        .leaflet-container {
-            z-index: 2;
-        }
-        
-        .map-instructions {
-            background: var(--light-bg);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--primary);
-        }
-    </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
-                    <li><a href="found.html" style="color: var(--primary);"><strong>Tier Gefunden?</strong></a></li>
-                    <li><a href="login.html">Login</a></li>
-                </ul>
-            </nav>
+<body data-page="found">
+    <main class="wrap wrap-narrow">
+        <div class="page-head">
+            <h1>Du hast ein Tier gefunden?</h1>
+            <p class="lead">Danke, dass du hilfst. Lade ein Foto hoch – PetConnect zeigt dir sofort, ob jemand dieses Tier vermisst. Ein Konto brauchst du nicht.</p>
         </div>
-    </header>
 
-    <!-- Hero Section -->
-    <div class="hero">
-        <div class="container">
-            <h1>🎉 Du hast ein Tier gefunden?</h1>
-            <p>Lade ein Foto hoch und unsere KI wird automatisch nach vermissten Tieren suchen!</p>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <main class="container" style="margin-bottom: 60px;">
-        <div class="grid grid-2">
-            <!-- Upload Section -->
-            <div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Bild hochladen</h3>
-                    </div>
-                    
-                    <!-- Alerts -->
-                    <div id="alertContainer"></div>
-                    
-                    <!-- Drag & Drop Area -->
-                    <div id="dropZone" class="drop-zone">
-                        <div class="drop-zone-icon">📁</div>
-                        <div class="drop-zone-text">Ziehe dein Bild hierher oder klicke zum Auswählen</div>
-                        <div class="drop-zone-subtext">Unterstützt JPG, PNG, GIF (Max. 10MB)</div>
-                    </div>
-                    
-                    <!-- Preview -->
-                    <div id="previewContainer" style="display: none; margin: 20px 0; text-align: center;">
-                        <img id="imagePreview" style="max-width: 100%; max-height: 300px; border-radius: 8px;" alt="Preview">
-                        <p style="margin-top: 1rem; color: var(--success); font-weight: 600;">✓ Bild ausgewählt</p>
-                    </div>
-                    
-                    <!-- Form -->
-                    <input type="file" id="fileInput" accept="image/*">
-                    
-                    <form id="finderForm">
-                        <div class="form-group">
-                            <label for="species">Was für ein Tier hast du gefunden? *</label>
-                            <select id="species" name="species" required style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
-                                <option value="">-- Bitte wählen --</option>
-                                <option value="dog">Hund</option>
-                                <option value="cat">Katze</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Wo hast du das Tier gefunden? (Auf Karte markieren) *</label>
-                            <div class="map-instructions">
-                                <strong>So funktioniert's:</strong>
-                                <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                                    <li><strong>Klicken Sie auf die Karte</strong>, um die Position zu markieren, wo Sie das Tier gefunden haben</li>
-                                    <li>Nutzen Sie den Button <strong>"Aktuellen Standort verwenden"</strong>, falls am aktuellen Standort gefunden</li>
-                                    <li>Sie können den <strong>roten Marker verschieben</strong>, um die Position anzupassen</li>
-                                    <li>Zoomen Sie mit dem Mausrad oder den +/- Buttons für eine genauere Position</li>
-                                </ul>
-                            </div>
-                            
-                            <button type="button" onclick="useCurrentLocation()" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                                Aktuellen Standort verwenden
-                            </button>
-                            
-                            <div id="map"></div>
-                            
-                            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--light-bg); border-radius: 8px; font-size: 0.9rem;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <strong>Ausgewählte Position:</strong>
-                                </div>
-                                <div>
-                                    <div style="color: var(--muted);">
-                                        Latitude: <strong id="displayLat" style="color: var(--primary);">Noch nicht ausgewählt</strong>
-                                    </div>
-                                    <div style="color: var(--muted);">
-                                        Longitude: <strong id="displayLng" style="color: var(--primary);">Noch nicht ausgewählt</strong>
-                                    </div>
-                                </div>
-                                <div id="selectionWarning" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border-left: 3px solid #ffc107; color: #856404;">
-                                    Bitte wählen Sie eine Position auf der Karte aus!
-                                </div>
-                            </div>
-                            
-                            <!-- Hidden fields for coordinates -->
-                            <input type="hidden" id="latitude" name="latitude">
-                            <input type="hidden" id="longitude" name="longitude">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="description">Beschreibung</label>
-                            <textarea id="description" name="description" rows="4"
-                                      placeholder="Beschreibe das Tier, seinen Zustand, Besonderheiten, etc."></textarea>
-                        </div>
-                        
-                        <div class="grid grid-2">
-                            <div class="form-group">
-                                <label for="contact">Deine E-Mail/Kontakt</label>
-                                <input type="text" id="contact" name="contact" 
-                                       placeholder="E-Mail oder Name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="phone">Telefon</label>
-                                <input type="tel" id="phone" name="phone" 
-                                       placeholder="z.B. +49 123 456789">
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            Report einreichen & nach Tieren suchen
-                        </button>
-                    </form>
+        <form id="finderForm" class="panel" novalidate>
+            <div class="step">
+                <div class="step-num" aria-hidden="true">1</div>
+                <div>
+                    <h3>Foto</h3>
+                    <p class="muted">Das ganze Tier, möglichst seitlich oder von vorne. Gesicht und Fellzeichnung sollten gut zu sehen sein.</p>
+                    <label class="dropzone" id="dropzone">
+                        <span class="dz-icon"></span>
+                        <strong>Foto aufnehmen oder auswählen</strong>
+                        <span class="muted">JPG, PNG, GIF bis 10 MB</span>
+                        <input type="file" id="photo" accept="image/jpeg,image/png,image/gif">
+                    </label>
                 </div>
             </div>
-            
-            <!-- Info Section -->
-            <div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>❓ So funktioniert's</h3>
+
+            <div class="step">
+                <div class="step-num" aria-hidden="true">2</div>
+                <div>
+                    <h3 id="speciesLabel">Was für ein Tier?</h3>
+                    <p class="muted">Verglichen wird nur mit Meldungen derselben Tierart.</p>
+                    <div class="choice" role="radiogroup" aria-labelledby="speciesLabel">
+                        <input type="radio" name="species" id="speciesDog" value="dog">
+                        <label for="speciesDog" data-icon="dog">Hund</label>
+                        <input type="radio" name="species" id="speciesCat" value="cat">
+                        <label for="speciesCat" data-icon="cat">Katze</label>
                     </div>
-                    
-                    <div style="line-height: 2;">
-                        <div style="margin-bottom: 1.5rem;">
-                            <h4 style="color: var(--primary); margin-bottom: 0.5rem;">1️⃣ Foto hochladen</h4>
-                            <p>Mache ein klares Foto des Tieres und lade es hoch. Am besten gegen guten Licht und von vorne.</p>
-                        </div>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">2️⃣ KI-Analyse</h4>
-                            <p>Unsere PyTorch-KI analysiert das Bild und vergleicht es mit allen vermissten Tieren in unserer Datenbank.</p>
-                        </div>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <h4 style="color: var(--accent); margin-bottom: 0.5rem;">3️⃣ Ergebnisse</h4>
-                            <p>Du erhältst sofort eine Liste mit den ähnlichsten Tierenprofile - sortiert nach Ähnlichkeitsgrad.</p>
-                        </div>
-                        
-                        <div>
-                            <h4 style="color: var(--success); margin-bottom: 0.5rem;">4️⃣ Kontakt</h4>
-                            <p>Die Tierbesitzer werden benachrichtigt und können sich direkt mit dir in Verbindung setzen.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card" style="margin-top: 2rem; background: rgba(39, 174, 96, 0.05); border: 2px solid var(--success);">
-                    <h4 style="color: var(--success); margin-bottom: 1rem;">Tipps für besten Match</h4>
-                    <ul style="list-style: none; color: var(--dark);">
-                        <li>✓ Helles, natürliches Licht verwenden</li>
-                        <li>✓ Tier von vorne/seite fotografieren</li>
-                        <li>✓ Gesicht und besondere Merkmale zeigen</li>
-                        <li>✓ Genaue Standortangabe machen</li>
-                        <li>✓ Ausführliche Beschreibung schreiben</li>
-                    </ul>
                 </div>
             </div>
-        </div>
+
+            <div class="step">
+                <div class="step-num" aria-hidden="true">3</div>
+                <div>
+                    <h3>Wo hast du es gefunden?</h3>
+                    <p class="muted">Tippe auf die Karte oder nimm deinen aktuellen Standort.</p>
+                    <div class="map-bar">
+                        <span class="map-status" id="mapStatus">Noch kein Ort markiert</span>
+                        <button type="button" class="btn btn-ghost btn-sm" id="locateBtn"></button>
+                    </div>
+                    <div id="map" class="map"></div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num" aria-hidden="true">4</div>
+                <div>
+                    <h3>Wie erreicht dich der Besitzer?</h3>
+                    <p class="muted">Gib mindestens eine Möglichkeit an. Sichtbar nur für Besitzer, deren Tier ähnlich aussieht.</p>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="contact">Name oder E-Mail</label>
+                            <input type="text" id="contact" autocomplete="email" placeholder="z. B. anna@example.de">
+                        </div>
+                        <div class="field">
+                            <label for="phone">Telefon</label>
+                            <input type="tel" id="phone" autocomplete="tel" placeholder="z. B. 0151 23456789">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="description">Notiz <span class="optional">(optional)</span></label>
+                        <textarea id="description" placeholder="z. B. Hund ist bei mir zuhause, wirkt gesund. Trägt ein blaues Halsband ohne Marke."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-signal" id="submitBtn">Fund melden und Besitzer suchen</button>
+            </div>
+        </form>
+
+        <section id="results" hidden aria-live="polite"></section>
     </main>
 
-    <!-- Results Modal -->
-    <div id="resultsModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeResultsModal()">&times;</span>
-            <h2 style="margin-bottom: 1rem;">KI-Ergebnisse</h2>
-            <div id="matchesList"></div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 PetConnect - Wiederfindung vermisster Haustiere</p>
-        <p><a href="#">Datenschutz</a> | <a href="#">Impressum</a></p>
-    </footer>
-
-    <!-- Leaflet JS für die Karte -->
     <script src="../assets/leaflet/leaflet.js"></script>
     <script src="../js/api.js"></script>
     <script>
-        // Map variables
-        let map = null;
-        let marker = null;
-        let selectedLat = null;
-        let selectedLng = null;
-        
-        // Wait for Leaflet to load
-        function waitForLeaflet(callback) {
-            if (typeof L !== 'undefined') {
-                console.log('Leaflet loaded successfully');
-                callback();
-            } else {
-                console.log('Waiting for Leaflet...');
-                setTimeout(() => waitForLeaflet(callback), 100);
-            }
-        }
-        
-        // Initialize map
-        function initMap() {
-            console.log('=== initMap() called ===');
-            
-            try {
-                // Check if Leaflet is loaded
-                if (typeof L === 'undefined') {
-                    console.error('Leaflet.js not loaded!');
-                    showAlert('Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.', 'error');
-                    return;
-                }
-                
-                // Check if map container exists
-                const mapContainer = document.getElementById('map');
-                if (!mapContainer) {
-                    console.error('Map container not found!');
-                    return;
-                }
-                
-                console.log('Map container found, initializing...');
-                
-                // Default center (Deutschland)
-                const defaultLat = 51.1657;
-                const defaultLng = 10.4515;
-                
-                // Create map
-                map = L.map('map').setView([defaultLat, defaultLng], 6);
-                console.log('Map created');
-                
-                // Add OpenStreetMap tiles
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    maxZoom: 19
-                }).addTo(map);
-                console.log('Tiles added');
-                
-                // Force map to resize properly
-                setTimeout(() => {
-                    map.invalidateSize();
-                    console.log('Map size invalidated');
-                }, 200);
-                
-                // Add click event to map
-                map.on('click', function(e) {
-                    console.log('Map clicked at:', e.latlng);
-                    setMarker(e.latlng.lat, e.latlng.lng);
-                });
-                
-                // Try to get user's location automatically
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            console.log('Got user location:', lat, lng);
-                            map.setView([lat, lng], 13);
-                            setMarker(lat, lng);
-                        },
-                        (error) => {
-                            console.log('Geolocation nicht verfügbar:', error.message);
-                            // Kein Problem - User kann auf Karte klicken
-                        }
-                    );
-                }
-                
-                console.log('=== Map initialized successfully ===');
-            } catch (error) {
-                console.error('Error initializing map:', error);
-                showAlert('Fehler beim Laden der Karte: ' + error.message, 'error');
-            }
-        }
-        
-        // Set marker on map
-        function setMarker(lat, lng) {
-            selectedLat = lat;
-            selectedLng = lng;
-            
-            // Update hidden fields
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            
-            // Update display
-            document.getElementById('displayLat').textContent = lat.toFixed(6);
-            document.getElementById('displayLng').textContent = lng.toFixed(6);
-            
-            // Hide warning if it was shown
-            document.getElementById('selectionWarning').style.display = 'none';
-            
-            // Remove old marker if exists
-            if (marker) {
-                map.removeLayer(marker);
-            }
-            
-            // Add new marker
-            marker = L.marker([lat, lng], {
-                draggable: true,
-                icon: L.icon({
-                    iconUrl: '../assets/leaflet/images/marker-icon-2x-red.png',
-                    shadowUrl: '../assets/leaflet/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            
-            marker.bindPopup(`Tier hier gefunden<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`).openPopup();
-            
-            // Update coordinates when marker is dragged
-            marker.on('dragend', function(e) {
-                const position = e.target.getLatLng();
-                setMarker(position.lat, position.lng);
-            });
-        }
-        
-        // Use current location
-        function useCurrentLocation() {
-            if (!navigator.geolocation) {
-                showAlert('Ihr Browser unterstützt leider keine Standortermittlung. Bitte klicken Sie direkt auf die Karte.', 'warning');
-                return;
-            }
-            
-            showAlert('Ermittle Standort... Bitte erlauben Sie den Zugriff auf Ihren Standort.', 'info');
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
-                    setMarker(lat, lng);
-                    showAlert('Standort erfolgreich ermittelt! Sie können den Marker noch verschieben, falls nötig.', 'success');
-                },
-                (error) => {
-                    console.log('Geolocation error:', error);
-                    
-                    let message = '';
-                    if (error.code === 1) {
-                        message = 'Sie haben die Standortfreigabe abgelehnt. Das ist kein Problem - klicken Sie einfach auf die Karte, um die Position zu markieren!';
-                    } else if (error.code === 2) {
-                        message = 'Ihr Standort konnte nicht ermittelt werden. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    } else if (error.code === 3) {
-                        message = 'Die Standortermittlung hat zu lange gedauert. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    } else {
-                        message = 'Standort konnte nicht ermittelt werden. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    }
-                    
-                    showAlert(message, 'info');
-                }
-            );
-        }
-        
-        // Initialize map when page loads
-        waitForLeaflet(() => {
-            setTimeout(() => {
-                console.log('=== Starting map initialization ===');
-                initMap();
-            }, 300);
-        });
-        
-        // Initialize image uploader
-        let selectedFile = null;
-        
-        const uploader = new ImageUploader(
-            'dropZone',
-            'fileInput',
-            (file) => {
-                selectedFile = file;
-                document.getElementById('previewContainer').style.display = 'block';
-            }
-        );
-        
-        // Handle form submission
+        let photo = null;
+
+        document.querySelector('.dz-icon').outerHTML = icon('camera');
+        document.querySelectorAll('[data-icon]').forEach(el => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)));
+        document.getElementById('locateBtn').innerHTML = `${icon('locate')}Meinen Standort nehmen`;
+
+        setupPhotoInput(document.getElementById('dropzone'), (file) => { photo = file; });
+        const picker = createMapPicker({ mapId: 'map', statusId: 'mapStatus', locateId: 'locateBtn', popupText: 'Hier gefunden' });
+
         document.getElementById('finderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            if (!selectedFile) {
-                showAlert('Bitte wähle ein Bild aus', 'error');
+            const species = document.querySelector('input[name="species"]:checked')?.value;
+            const contact = document.getElementById('contact').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!photo) {
+                toast('Bitte lade ein Foto des Tieres hoch.', 'error');
+                document.getElementById('dropzone').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
-            
-            // Check if location is selected
-            if (!selectedLat || !selectedLng) {
-                showAlert('Bitte wählen Sie eine Position auf der Karte aus!', 'error');
-                document.getElementById('selectionWarning').style.display = 'block';
-                // Scroll to map
-                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            
-            // Check if species is selected
-            const species = document.getElementById('species').value;
             if (!species) {
-                showAlert('Bitte wähle die Tierart aus (Hund oder Katze)!', 'error');
-                document.getElementById('species').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                toast('Bitte wähle aus, ob es ein Hund oder eine Katze ist.', 'error');
+                document.getElementById('speciesDog').focus();
                 return;
             }
-            
+            if (!picker.hasLocation()) {
+                picker.flagMissing();
+                toast('Bitte markiere den Fundort auf der Karte.', 'error');
+                return;
+            }
+            if (!contact && !phone) {
+                toast('Bitte gib eine E-Mail-Adresse oder Telefonnummer an, damit der Besitzer dich erreicht.', 'error');
+                document.getElementById('contact').focus();
+                return;
+            }
+
             const formData = new FormData();
-            formData.append('image', selectedFile);
+            formData.append('image', photo);
             formData.append('species', species);
-            formData.append('location', `Koordinaten: ${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`);
-            formData.append('latitude', selectedLat);
-            formData.append('longitude', selectedLng);
-            formData.append('description', document.getElementById('description').value);
-            formData.append('finder_contact', document.getElementById('contact').value);
-            formData.append('finder_phone', document.getElementById('phone').value);
-            
-            showSpinner(true);
-            
-            console.log('=== FORM SUBMIT STARTED ===');
-            console.log('Selected species:', species);
-            console.log('Selected location:', selectedLat, selectedLng);
-            
-            const result = await submitFinderReport(formData);
-            
-            console.log('=== SUBMIT RESULT ===', result);
-            
-            showSpinner(false);
-            
-            if (result.success) {
-                console.log('SUCCESS - Matches:', result.matches);
-                document.getElementById('finderForm').reset();
-                document.getElementById('previewContainer').style.display = 'none';
-                selectedFile = null;
-                
-                // Show results
-                await displayMatches(result.matches || []);
-                document.getElementById('resultsModal').classList.add('active');
-            } else {
-                console.error('FAILED - No success from backend');
+            formData.append('location', picker.place);
+            formData.append('latitude', picker.lat);
+            formData.append('longitude', picker.lng);
+            formData.append('finder_contact', contact);
+            formData.append('finder_phone', phone);
+            formData.append('description', document.getElementById('description').value.trim());
+
+            const button = document.getElementById('submitBtn');
+            setBusy(button, true, 'Foto wird verglichen …');
+            try {
+                const result = await api.request('finder/submit', { method: 'POST', body: formData });
+                showResults(result.matches || [], species);
+            } catch (err) {
+                toast(err.message, 'error');
+            } finally {
+                setBusy(button, false);
             }
         });
-        
-        // Reverse Geocoding für Koordinaten
-        async function reverseGeocode(lat, lng) {
-            try {
-                // Delay um Rate-Limiting zu vermeiden
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
-                    { 
-                        headers: { 'User-Agent': 'PetConnect/1.0' },
-                        method: 'GET'
-                    }
-                );
-                
-                if (!response.ok) {
-                    console.error('Geocoding HTTP error:', response.status);
-                    return null;
-                }
-                
-                const data = await response.json();
-                console.log('Geocoding data:', data);
-                
-                if (data.display_name) {
-                    const addr = data.address;
-                    let formattedAddress = '';
-                    
-                    // Versuche mehrere Varianten
-                    if (addr.road) {
-                        formattedAddress += addr.road;
-                        if (addr.house_number) formattedAddress += ' ' + addr.house_number;
-                    } else if (addr.suburb) {
-                        formattedAddress += addr.suburb;
-                    } else if (addr.quarter) {
-                        formattedAddress += addr.quarter;
-                    }
-                    
-                    if (formattedAddress) formattedAddress += ', ';
-                    
-                    if (addr.postcode) formattedAddress += addr.postcode + ' ';
-                    if (addr.city) {
-                        formattedAddress += addr.city;
-                    } else if (addr.town) {
-                        formattedAddress += addr.town;
-                    } else if (addr.village) {
-                        formattedAddress += addr.village;
-                    } else if (addr.municipality) {
-                        formattedAddress += addr.municipality;
-                    }
-                    
-                    if (formattedAddress.trim()) {
-                        return formattedAddress.trim();
-                    }
-                    
-                    // Fallback auf display_name wenn keine strukturierte Adresse
-                    return data.display_name;
-                }
-            } catch (error) {
-                console.error('Reverse Geocoding Error:', error);
-            }
-            return null;
-        }
-        
-        async function displayMatches(matches) {
-            const matchesList = document.getElementById('matchesList');
-            
+
+        function showResults(matches, species) {
+            const section = document.getElementById('results');
+            document.getElementById('finderForm').hidden = true;
+            section.hidden = false;
+
+            const again = `<div class="form-actions" style="justify-content: flex-start;"><button class="btn btn-ghost" onclick="location.reload()">Weiteren Fund melden</button></div>`;
+
             if (matches.length === 0) {
-                matchesList.innerHTML = `
-                    <div class="alert alert-info">
-                        <p>Keine Übereinstimmungen gefunden. Aber keine Sorge - die Besitzer werden trotzdem benachrichtigt!</p>
-                    </div>
-                `;
+                section.innerHTML = `
+                    <div class="panel">
+                        <h2>Gerade passt keine Vermisstenmeldung</h2>
+                        <p class="muted mt-1">Dein Fund ist gespeichert. Bis sich der Besitzer meldet, helfen diese Schritte:</p>
+                        <ul class="mt-1" style="padding-left: 1.25rem; display: grid; gap: .4rem;">
+                            <li>Beim Tierarzt kostenlos nach einem Mikrochip suchen lassen.</li>
+                            <li>Das Tier bei TASSO oder FINDEFIX als gefunden melden.</li>
+                            <li>Das örtliche Tierheim und Fundbüro informieren.</li>
+                        </ul>
+                        ${again}
+                    </div>`;
+                section.scrollIntoView({ behavior: 'smooth' });
                 return;
             }
-            
-            let html = `<p style="margin-bottom: 1.5rem; font-size: 1.2rem; text-align: center; font-weight: 600; color: var(--success);">
-                🎉 Wir haben ${matches.length} mögliche Übereinstimmung(en) gefunden!
-            </p>`;
-            
-            for (const [index, match] of matches.entries()) {
-                const similarity = (match.similarity * 100).toFixed(1);
-                const imageUrl = match.image ? `/${match.image}` : 'https://via.placeholder.com/150?text=Kein+Bild';
-                
-                // Prüfe ob location Koordinaten sind und hole ggf. Adresse
-                let location = match.location_last_seen;
-                const coordPattern = /Koordinaten:\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/;
-                const coordMatch = location.match(coordPattern);
-                
-                if (coordMatch) {
-                    const lat = parseFloat(coordMatch[1]);
-                    const lng = parseFloat(coordMatch[2]);
-                    console.log('Fetching address for:', lat, lng);
-                    const address = await reverseGeocode(lat, lng);
-                    console.log('Address result:', address);
-                    if (address) {
-                        location = address;
-                    } else {
-                        location = `GPS: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
-                    }
-                }
-                
-                html += `
-                    <div class="card" style="margin-bottom: 2rem; border: 3px solid var(--primary); border-radius: 12px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.15);">
-                        <!-- Header mit Match-Info -->
-                        <div style="background: linear-gradient(135deg, ${index === 0 ? '#FFD700' : 'var(--primary)'} 0%, ${index === 0 ? '#FFA500' : 'var(--secondary)'} 100%); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h3 style="margin: 0; font-size: 1.4rem;">Match #${index + 1}: ${match.name}</h3>
-                                <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">${match.species === 'dog' ? 'Hund' : 'Katze'}${match.breed ? ` • ${match.breed}` : ''}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 2rem; font-weight: bold; line-height: 1;">${similarity}%</div>
-                                <div style="font-size: 0.8rem; opacity: 0.9;">Ähnlichkeit</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Content -->
-                        <div style="display: flex; gap: 1.5rem; padding: 1.5rem; flex-wrap: wrap;">
-                            <!-- Bild -->
-                            <div style="flex-shrink: 0;">
-                                <img src="${imageUrl}" alt="${match.name}" 
-                                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;"
-                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 font-size=%2220%22 fill=%22%23999%22%3EKein Bild%3C/text%3E%3C/svg%3E'">
-                            </div>
-                            
-                            <!-- Info -->
-                            <div style="flex: 1; min-width: 250px;">
-                                <div style="margin-bottom: 1.5rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                        <strong style="font-size: 1.05rem;">Zuletzt gesehen:</strong>
+
+            section.innerHTML = `
+                <div class="match-alert">
+                    <h2>${matches.length === 1 ? 'Ein Tier sieht ähnlich aus' : `${matches.length} Tiere sehen ähnlich aus`}</h2>
+                    <p>Vergleiche die Fotos. Passt eins, melde dich direkt beim Besitzer. Er sieht deinen Fund außerdem in seinem Konto.</p>
+                    ${matches.map(m => {
+                        const pct = Math.round(Number(m.similarity) * 100);
+                        return `
+                            <article class="match">
+                                ${photoTag(m.image ? '/' + m.image : PLACEHOLDER_PHOTO, m.name)}
+                                <div>
+                                    <h3>${esc(m.name)}</h3>
+                                    <p class="muted">${esc([speciesLabel(m.species), m.breed].filter(Boolean).join(' · '))}</p>
+                                    <div class="similarity">
+                                        <div class="similarity-bar"><i style="width:${pct}%"></i></div>
+                                        <b>${pct} %</b><span class="muted">Ähnlichkeit</span>
                                     </div>
-                                    <div style="padding-left: 0; color: #555; font-size: 1rem;">${location}</div>
+                                    <dl>
+                                        <dt>Vermisst bei</dt><dd>${esc(formatPlace(m.location_last_seen))}</dd>
+                                        ${m.owner_phone ? `<dt>Telefon</dt><dd><a href="tel:${esc(m.owner_phone)}">${esc(m.owner_phone)}</a></dd>` : ''}
+                                        ${m.owner_email ? `<dt>E-Mail</dt><dd><a href="mailto:${esc(m.owner_email)}?subject=${encodeURIComponent('Ich habe vielleicht ' + m.name + ' gefunden')}">${esc(m.owner_email)}</a></dd>` : ''}
+                                    </dl>
                                 </div>
-                                
-                                <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--success);">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                                        <strong style="font-size: 1.1rem; color: #2e7d32;">Besitzer kontaktieren:</strong>
-                                    </div>
-                                    <div style="padding-left: 0;">
-                                        <p style="margin: 0.5rem 0; font-size: 1rem;">
-                                            <strong>E-Mail:</strong> <a href="mailto:${match.owner_email}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${match.owner_email}</a>
-                                        </p>
-                                        ${match.owner_phone ? `<p style="margin: 0.5rem 0; font-size: 1rem;">
-                                            <strong>Telefon:</strong> <a href="tel:${match.owner_phone}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${match.owner_phone}</a>
-                                        </p>` : ''}
-                                    </div>
-                                    <p style="margin: 1rem 0 0 0; font-size: 0.9rem; color: #555; font-style: italic;">
-                                        Bitte benachrichtigen Sie den Besitzer direkt!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            matchesList.innerHTML = html;
-        }
-        
-        function closeResultsModal() {
-            document.getElementById('resultsModal').classList.remove('active');
-        }
-        
-        // Custom alert container
-        function showAlert(message, type = 'info') {
-            const container = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.innerHTML = `
-                <span>${message}</span>
-                <button style="background:none;border:none;color:inherit;cursor:pointer;font-size:1.2rem;" onclick="this.parentElement.remove()">×</button>
-            `;
-            container.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
+                            </article>`;
+                    }).join('')}
+                    <p class="muted mt-1" style="font-size: .92rem;">Die Ähnlichkeit ist ein Hinweis der Bilderkennung, keine Gewissheit. Achte auf Fellzeichnung, Halsband und besondere Merkmale.</p>
+                    ${again}
+                </div>`;
+            section.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>

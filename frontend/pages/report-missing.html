@@ -3,565 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tier als Vermisst Melden - PetConnect</title>
+    <title>Als vermisst melden – PetConnect</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
     <link rel="stylesheet" href="../css/styles.css">
-    <!-- Leaflet CSS für die Karte (lokal) -->
-    <link rel="stylesheet" href="../assets/leaflet/leaflet.css" />
-    <style>
-        #map {
-            height: 400px;
-            width: 100%;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border: 2px solid var(--border);
-            background: #e8f4f8;
-            position: relative;
-            z-index: 1;
-        }
-        
-        #map::after {
-            content: 'Karte wird geladen...';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #666;
-            font-size: 1rem;
-            z-index: 0;
-        }
-        
-        .leaflet-container {
-            z-index: 2;
-        }
-        
-        .map-instructions {
-            background: var(--light-bg);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--primary);
-        }
-        .spinner {
-            border: 4px solid var(--light-bg);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="../assets/petconnect-logo.png" alt="PetConnect Logo" class="logo-image">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="missing-pets.html">Vermisste Tiere</a></li>
-                    <li><a href="found.html">Tier Gefunden?</a></li>
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="#" onclick="logout()">Logout</a></li>
-                </ul>
-            </nav>
+<body data-page="dashboard">
+    <main class="wrap wrap-narrow">
+        <div class="page-head">
+            <h1 id="title">Als vermisst melden</h1>
+            <p class="lead">Je genauer Ort und Zeitpunkt, desto besser können Menschen in der Nähe helfen.</p>
         </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
-        <div style="max-width: 800px; margin: 0 auto;">
-            <div style="margin-bottom: 2rem;">
-                <h1>Tier als vermisst melden</h1>
-                <p style="color: var(--muted);">Wir helfen dir, dein Tier wiederzufinden</p>
-            </div>
+        <div id="loading" class="loading">Tier wird geladen …</div>
 
-            <div id="alerts"></div>
+        <form id="reportForm" class="panel" novalidate hidden>
+            <div class="pet-row" style="border: none; padding: 0; margin-bottom: 2rem;" id="petSummary"></div>
 
-            <!-- Loading State -->
-            <div id="loading" style="text-align: center; padding: 3rem; background: white; border-radius: 12px;">
-                <div class="spinner"></div>
-                <p style="color: var(--muted); margin-top: 1rem;">Lade Tier-Informationen...</p>
-            </div>
-
-            <!-- Pet Info Card -->
-            <div id="petInfoCard" class="card" style="display: none; background: linear-gradient(135deg, #FFA500 0%, #FFB733 100%); color: white; margin-bottom: 2rem;">
-                <div style="display: flex; gap: 1.5rem; align-items: center;">
-                    <div style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; background: white; flex-shrink: 0;">
-                        <img id="petImage" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>
-                    <div style="flex: 1;">
-                        <h2 style="margin: 0 0 0.5rem 0; color: white;">
-                            <span id="petName">...</span>
-                        </h2>
-                        <p style="margin: 0; opacity: 0.9; font-size: 1.1rem;">
-                            <span id="petSpecies">...</span> · <span id="petBreed">...</span>
-                        </p>
+            <div class="step">
+                <div class="step-num" aria-hidden="true">1</div>
+                <div>
+                    <h3>Seit wann?</h3>
+                    <p class="muted">Der Tag, an dem du dein Tier zuletzt gesehen hast.</p>
+                    <div class="field" style="max-width: 260px;">
+                        <label for="dateMissing" class="sr-only">Datum</label>
+                        <input type="date" id="dateMissing" required>
                     </div>
                 </div>
             </div>
 
-            <!-- Missing Report Form -->
-            <div id="reportForm" class="card" style="display: none;">
-                <form id="missingReportForm">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--danger);">Vermissten-Bericht</h3>
-                    
-                    <div class="form-group">
-                        <label for="dateMissing">Wann wurde das Tier zuletzt gesehen? *</label>
-                        <input type="date" id="dateMissing" name="date_missing" required max="">
+            <div class="step">
+                <div class="step-num" aria-hidden="true">2</div>
+                <div>
+                    <h3>Wo zuletzt gesehen?</h3>
+                    <p class="muted">Tippe auf die Karte. Den Marker kannst du danach noch verschieben.</p>
+                    <div class="map-bar">
+                        <span class="map-status" id="mapStatus">Noch kein Ort markiert</span>
+                        <button type="button" class="btn btn-ghost btn-sm" id="locateBtn"></button>
                     </div>
-
-                    <div class="form-group">
-                        <label>Wo wurde das Tier zuletzt gesehen? (Auf Karte markieren) *</label>
-                        <div class="map-instructions">
-                            <strong>So funktioniert's:</strong>
-                            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                                <li><strong>Klicken Sie auf die Karte</strong>, um die Position zu markieren, wo Ihr Tier zuletzt gesehen wurde</li>
-                                <li>Nutzen Sie den Button <strong>"Aktuellen Standort verwenden"</strong>, falls das Tier an Ihrem aktuellen Standort verschwunden ist</li>
-                                <li>Sie können den <strong>roten Marker verschieben</strong>, um die Position anzupassen</li>
-                                <li>Zoomen Sie mit dem Mausrad oder den +/- Buttons für eine genauere Position</li>
-                            </ul>
-                        </div>
-                        
-                        <button type="button" onclick="useCurrentLocation()" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
-                            Aktuellen Standort verwenden
-                        </button>
-                        
-                        <div id="map"></div>
-                        
-                        <div style="margin-top: 1rem; padding: 0.75rem; background: var(--light-bg); border-radius: 8px; font-size: 0.9rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <strong>Ausgewählte Position:</strong>
-                            </div>
-                            <div>
-                                <div style="color: var(--muted);">
-                                    Latitude: <strong id="displayLat" style="color: var(--primary);">Noch nicht ausgewählt</strong>
-                                </div>
-                                <div style="color: var(--muted);">
-                                    Longitude: <strong id="displayLng" style="color: var(--primary);">Noch nicht ausgewählt</strong>
-                                </div>
-                            </div>
-                            <div id="selectionWarning" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border-left: 3px solid #ffc107; color: #856404;">
-                                Bitte wählen Sie eine Position auf der Karte aus!
-                            </div>
-                        </div>
-                        
-                        <!-- Hidden fields for coordinates -->
-                        <input type="hidden" id="latitude" name="latitude">
-                        <input type="hidden" id="longitude" name="longitude">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">Beschreibung der Umstände</label>
-                        <textarea id="description" name="description" rows="4" placeholder="z.B. Das Tier lief erschrocken davon, nachdem ein Auto gehupt hat. Es trug ein rotes Halsband..."></textarea>
-                        <small style="color: var(--muted);">Beschreibe die Situation, in der das Tier verschwunden ist</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="rewardAmount">Finderlohn (optional, in €)</label>
-                        <input type="number" id="rewardAmount" name="reward_amount" min="0" step="10" placeholder="z.B. 100">
-                        <small style="color: var(--muted);">Ein Finderlohn kann die Motivation erhöhen</small>
-                    </div>
-
-                    <div class="alert alert-warning" style="margin: 1.5rem 0;">
-                        <strong>Wichtig:</strong><br>
-                        Durch das Absenden wird dein Tier als vermisst markiert. 
-                        Alle Nutzer können dann deine Kontaktdaten sehen, falls sie dein Tier finden.
-                    </div>
-
-                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border);">
-
-                    <!-- Submit -->
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <a href="dashboard.html" class="btn btn-secondary">Abbrechen</a>
-                        <button type="submit" class="btn btn-danger" id="submitBtn">
-                            🚨 Als vermisst melden
-                        </button>
-                    </div>
-                </form>
+                    <div id="map" class="map"></div>
+                </div>
             </div>
 
-            <!-- Info Box -->
-            <div class="alert alert-info" style="margin-top: 2rem;">
-                <h4 style="margin: 0 0 0.5rem 0;">Was passiert nach der Meldung?</h4>
-                <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                    <li>Dein Tier erscheint in der öffentlichen Liste vermisster Tiere</li>
-                    <li>Finder können Fotos hochladen, die automatisch mit deinem Tier abgeglichen werden</li>
-                    <li>Bei einer Übereinstimmung wirst du sofort benachrichtigt</li>
-                    <li>Deine Kontaktdaten werden für potenzielle Finder sichtbar</li>
-                </ul>
+            <div class="step">
+                <div class="step-num" aria-hidden="true">3</div>
+                <div>
+                    <h3>Was ist passiert?</h3>
+                    <p class="muted">Erscheint auf der öffentlichen Meldung.</p>
+                    <div class="field">
+                        <label for="description">Beschreibung <span class="optional">(optional)</span></label>
+                        <textarea id="description" placeholder="z. B. Beim Spaziergang im Park erschrocken weggelaufen. Trägt ein rotes Halsband, ist scheu bei Fremden."></textarea>
+                    </div>
+                    <div class="field" style="max-width: 260px;">
+                        <label for="reward">Finderlohn in € <span class="optional">(optional)</span></label>
+                        <input type="number" id="reward" min="0" step="10" inputmode="numeric">
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div class="note note-warn mt-2" id="publicNote"></div>
+
+            <div class="form-actions">
+                <a href="dashboard.html" class="btn btn-ghost">Abbrechen</a>
+                <button type="submit" class="btn btn-danger" id="submitBtn">Vermisstenmeldung veröffentlichen</button>
+            </div>
+        </form>
     </main>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 PetConnect - Mit ❤️ und 🤖 entwickelt</p>
-        </div>
-    </footer>
-
-    <!-- Leaflet JS für die Karte -->
     <script src="../assets/leaflet/leaflet.js"></script>
     <script src="../js/api.js"></script>
     <script>
-        // Wait for Leaflet to load
-        function waitForLeaflet(callback) {
-            if (typeof L !== 'undefined') {
-                console.log('Leaflet loaded successfully');
-                callback();
-            } else {
-                console.log('Waiting for Leaflet...');
-                setTimeout(() => waitForLeaflet(callback), 100);
-            }
-        }
-        
-        let petId = null;
-        let petData = null;
-        let map = null;
-        let marker = null;
-        let selectedLat = null;
-        let selectedLng = null;
-        let selectedAddress = null;
+        const petId = new URLSearchParams(location.search).get('petId');
+        let pet = null;
+        let picker = null;
 
-        // Initialize map
-        function initMap() {
-            console.log('=== initMap() called ===');
-            
-            try {
-                // Check if Leaflet is loaded
-                if (typeof L === 'undefined') {
-                    console.error('Leaflet.js not loaded!');
-                    showAlert('Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.', 'error');
-                    return;
-                }
-                
-                // Check if map container exists
-                const mapContainer = document.getElementById('map');
-                if (!mapContainer) {
-                    console.error('Map container not found!');
-                    return;
-                }
-                
-                console.log('Map container found, initializing...');
-                
-                // Default center (Deutschland)
-                const defaultLat = 51.1657;
-                const defaultLng = 10.4515;
-                
-                // Create map
-                map = L.map('map').setView([defaultLat, defaultLng], 6);
-                console.log('Map created');
-                
-                // Add OpenStreetMap tiles
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    maxZoom: 19
-                }).addTo(map);
-                console.log('Tiles added');
-                
-                // Force map to resize properly
-                setTimeout(() => {
-                    map.invalidateSize();
-                    console.log('Map size invalidated');
-                }, 200);
-                
-                // Add click event to map
-                map.on('click', function(e) {
-                    console.log('Map clicked at:', e.latlng);
-                    setMarker(e.latlng.lat, e.latlng.lng);
-                });
-                
-                // Try to get user's location automatically
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            console.log('Got user location:', lat, lng);
-                            map.setView([lat, lng], 13);
-                            setMarker(lat, lng);
-                        },
-                        (error) => {
-                            console.log('Geolocation nicht verfügbar:', error.message);
-                            // Kein Problem - User kann auf Karte klicken
-                        }
-                    );
-                }
-                
-                console.log('=== Map initialized successfully ===');
-            } catch (error) {
-                console.error('Error initializing map:', error);
-                showAlert('Fehler beim Laden der Karte: ' + error.message, 'error');
-            }
-        }
-        
-        // Set marker on map
-        function setMarker(lat, lng) {
-            selectedLat = lat;
-            selectedLng = lng;
-            
-            // Update hidden fields
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            
-            // Update display
-            document.getElementById('displayLat').textContent = lat.toFixed(6);
-            document.getElementById('displayLng').textContent = lng.toFixed(6);
-            
-            // Hide warning if it was shown
-            document.getElementById('selectionWarning').style.display = 'none';
-            
-            // Remove old marker if exists
-            if (marker) {
-                map.removeLayer(marker);
-            }
-            
-            // Add new marker
-            marker = L.marker([lat, lng], {
-                draggable: true,
-                icon: L.icon({
-                    iconUrl: '../assets/leaflet/images/marker-icon-2x-red.png',
-                    shadowUrl: '../assets/leaflet/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            
-            marker.bindPopup(`Zuletzt gesehen hier<br>${selectedAddress || address}`).openPopup();
-            
-            // Update coordinates when marker is dragged
-            marker.on('dragend', function(e) {
-                const position = e.target.getLatLng();
-                setMarker(position.lat, position.lng);
-            });
-        }
-        
-        // Use current location
-        function useCurrentLocation() {
-            if (!navigator.geolocation) {
-                showAlert('Ihr Browser unterstützt leider keine Standortermittlung. Bitte klicken Sie direkt auf die Karte.', 'warning');
+        document.getElementById('locateBtn').innerHTML = `${icon('locate')}Meinen Standort nehmen`;
+
+        async function init() {
+            const user = await requireAuth();
+            if (!user) return;
+
+            if (!petId) {
+                location.href = 'dashboard.html';
                 return;
             }
-            
-            showAlert('Ermittle Standort... Bitte erlauben Sie den Zugriff auf Ihren Standort.', 'info');
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
-                    setMarker(lat, lng);
-                    showAlert('Standort erfolgreich ermittelt! Sie können den Marker noch verschieben, falls nötig.', 'success');
-                },
-                (error) => {
-                    console.log('Geolocation error:', error);
-                    
-                    let message = '';
-                    if (error.code === 1) {
-                        // User denied
-                        message = 'Sie haben die Standortfreigabe abgelehnt. Das ist kein Problem - klicken Sie einfach auf die Karte, um die Position zu markieren!';
-                    } else if (error.code === 2) {
-                        // Position unavailable
-                        message = 'Ihr Standort konnte nicht ermittelt werden. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    } else if (error.code === 3) {
-                        // Timeout
-                        message = 'Die Standortermittlung hat zu lange gedauert. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    } else {
-                        message = 'Standort konnte nicht ermittelt werden. Bitte klicken Sie auf die Karte, um die Position zu markieren.';
-                    }
-                    
-                    showAlert(message, 'info');
-                }
-            );
-        }
 
-        // Check if logged in and load pet
-        async function checkAuth() {
             try {
-                const startAuth = performance.now();
-                console.log('=== DEBUG checkAuth START ===');
-                const response = await api.get('/auth/check');
-                const authTime = performance.now() - startAuth;
-                console.log(`Auth response (${authTime.toFixed(0)}ms):`, response);
-                
-                if (!response.success || !response.data.is_logged_in) {
-                    session.clearSession();
-                    window.location.href = 'login.html';
-                    return;
-                }
-                
-                // Get pet ID from URL
-                const urlParams = new URLSearchParams(window.location.search);
-                petId = urlParams.get('petId');
-                console.log('Pet ID from URL:', petId);
-                
-                if (!petId) {
-                    showAlert('Kein Tier ausgewählt', 'error');
-                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
-                    return;
-                }
-                
-                loadPet();
-            } catch (error) {
-                console.error('Auth error:', error);
-                session.clearSession();
-                window.location.href = 'login.html';
+                pet = (await api.get(`pets/${encodeURIComponent(petId)}`)).data;
+            } catch (e) {
+                document.getElementById('loading').outerHTML =
+                    `<div class="empty"><h3>Tier nicht gefunden</h3><p>${esc(e.message)}</p><a class="btn btn-primary" href="dashboard.html">Zu meinen Tieren</a></div>`;
+                return;
             }
+
+            document.getElementById('title').textContent = `${pet.name} als vermisst melden`;
+            document.getElementById('petSummary').innerHTML = `
+                ${photoTag(petPhotoUrl(pet), pet.name)}
+                <div><h3>${esc(pet.name)}</h3><p class="muted">${esc([speciesLabel(pet.species), pet.breed].filter(Boolean).join(' · '))}</p></div>`;
+
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('dateMissing');
+            dateInput.max = today;
+            dateInput.value = today;
+
+            document.getElementById('publicNote').innerHTML = user.phone
+                ? `${icon('info')}<div>Die Meldung ist öffentlich sichtbar, zusammen mit deinem Namen und deiner Telefonnummer <strong>${esc(user.phone)}</strong>, damit Finder dich erreichen.</div>`
+                : `${icon('alert')}<div>Die Meldung ist öffentlich sichtbar. Du hast noch keine Telefonnummer hinterlegt – Finder können dich dann nur über PetConnect erreichen. <a href="dashboard.html">Telefonnummer ergänzen</a></div>`;
+
+            document.getElementById('loading').hidden = true;
+            document.getElementById('reportForm').hidden = false;
+
+            picker = createMapPicker({ mapId: 'map', statusId: 'mapStatus', locateId: 'locateBtn', popupText: `Hier zuletzt gesehen` });
         }
 
-        // Load pet data
-        async function loadPet() {
-            try {
-                const startLoad = performance.now();
-                console.log('=== DEBUG loadPet START ===');
-                console.log('Loading pet with ID:', petId);
-                const response = await api.get(`/pets/${petId}`);
-                const loadTime = performance.now() - startLoad;
-                console.log(`Pet response (${loadTime.toFixed(0)}ms):`, response);
-                
-                if (response.success) {
-                    petData = response.data;
-                    console.log('Pet data loaded:', petData);
-                    displayPetInfo();
-                    
-                    // Set max date to today
-                    document.getElementById('dateMissing').max = new Date().toISOString().split('T')[0];
-                    
-                    // SOFORT anzeigen - nicht auf Karte warten
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('petInfoCard').style.display = 'block';
-                    document.getElementById('reportForm').style.display = 'block';
-                    
-                    console.log('=== Page visible, now loading map in background ===');
-                    
-                    // Karte ASYNCHRON im Hintergrund laden
-                    setTimeout(() => {
-                        waitForLeaflet(() => {
-                            console.log('=== Starting map initialization ===');
-                            initMap();
-                        });
-                    }, 100);
-                } else {
-                    console.error('Pet load failed:', response.message);
-                    showAlert(response.message || 'Tier nicht gefunden', 'error');
-                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
-                }
-            } catch (error) {
-                console.error('Exception in loadPet:', error);
-                showAlert('Fehler beim Laden der Tier-Daten: ' + error.message, 'error');
-                setTimeout(() => window.location.href = 'dashboard.html', 3000);
-            }
-        }
-
-        // Display pet info
-        function displayPetInfo() {
-            const animalEmoji = petData.species === 'dog' ? '🐕' : '🐈';
-            const imagePath = petData.profile_image && petData.profile_image !== 'default.jpg' && petData.profile_image.trim() !== '' 
-                ? `/uploads/pets/${petData.profile_image}` 
-                : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23ECF0F1%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2240%22>' + animalEmoji + '</text></svg>';
-            
-            document.getElementById('petImage').src = imagePath;
-            document.getElementById('petName').textContent = petData.name;
-            document.getElementById('petSpecies').textContent = petData.species === 'dog' ? 'Hund' : 'Katze';
-            document.getElementById('petBreed').textContent = petData.breed || 'Unbekannte Rasse';
-        }
-
-        // Handle form submission
-        document.getElementById('missingReportForm').addEventListener('submit', async (e) => {
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 20px; height: 20px; border-width: 3px;"></span> Wird gemeldet...';
-            
-            // Check if location is selected
-            if (!selectedLat || !selectedLng) {
-                showAlert('Bitte wählen Sie eine Position auf der Karte aus!', 'error');
-                document.getElementById('selectionWarning').style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Als vermisst melden';
-                
-                // Scroll to map
-                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const date = document.getElementById('dateMissing').value;
+            if (!date) {
+                toast('Bitte gib an, seit wann dein Tier vermisst wird.', 'error');
                 return;
             }
-            
+            if (!picker.hasLocation()) {
+                picker.flagMissing();
+                toast('Bitte markiere auf der Karte, wo dein Tier zuletzt gesehen wurde.', 'error');
+                return;
+            }
+
+            const button = document.getElementById('submitBtn');
+            setBusy(button, true, 'Wird veröffentlicht …');
             try {
-                const formData = {
-                    pet_id: petId,
-                    date_missing: document.getElementById('dateMissing').value,
-                    location_last_seen: selectedAddress || `Koordinaten: ${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`,
-                    latitude: selectedLat,
-                    longitude: selectedLng,
-                    description: document.getElementById('description').value || '',
-                    reward_amount: document.getElementById('rewardAmount').value || null
-                };
-                
-                console.log('Submitting form data:', formData);
-                const response = await api.post('/pets/report-missing', formData);
-                console.log('Submit response:', response);
-                
-                if (response.success) {
-                    showAlert(`${petData.name} wurde als vermisst gemeldet!`, 'success');
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 2000);
-                } else {
-                    showAlert(response.message || 'Fehler beim Melden', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '🚨 Als vermisst melden';
-                }
-            } catch (error) {
-                console.error('Form submit error:', error);
-                showAlert('Fehler beim Melden: ' + error.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '🚨 Als vermisst melden';
+                await api.post('pets/report-missing', {
+                    pet_id: pet.id,
+                    date_missing: date,
+                    location_last_seen: picker.place,
+                    latitude: picker.lat,
+                    longitude: picker.lng,
+                    description: document.getElementById('description').value.trim(),
+                    reward_amount: document.getElementById('reward').value || null
+                });
+                toast(`Die Meldung für ${pet.name} ist online. Wir drücken die Daumen!`, 'success');
+                setTimeout(() => { location.href = 'dashboard.html'; }, 1200);
+            } catch (err) {
+                toast(err.message, 'error');
+                setBusy(button, false);
             }
         });
 
-        // Logout
-        async function logout() {
-            try {
-                await api.post('/auth/logout');
-            } catch (error) {
-                // Ignore errors
-            }
-            window.location.href = 'login.html';
-        }
-
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const alertsEl = document.getElementById('alerts');
-            const alertClass = {
-                'success': 'alert-success',
-                'error': 'alert-error',
-                'warning': 'alert-warning',
-                'info': 'alert-info'
-            }[type] || 'alert-info';
-            
-            const alertHtml = `
-                <div class="alert ${alertClass}" style="margin-bottom: 1rem;">
-                    ${message}
-                </div>
-            `;
-            alertsEl.innerHTML = alertHtml;
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // Initialize
-        checkAuth();
+        init();
     </script>
 </body>
 </html>

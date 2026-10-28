@@ -24,8 +24,19 @@ class Pet {
         try {
             // Validierung
             if (!in_array($species, ['dog', 'cat'])) {
-                return ['success' => false, 'message' => 'Ungültige Tierart'];
+                return ['success' => false, 'message' => 'Bitte wähle aus, ob es ein Hund oder eine Katze ist'];
             }
+            if (trim((string)$name) === '') {
+                return ['success' => false, 'message' => 'Bitte gib den Namen deines Tieres an'];
+            }
+            
+            // Leere Formularfelder als NULL speichern (MySQL Strict Mode lehnt '' für INT/DECIMAL ab)
+            $nullable = function ($value) {
+                return ($value === '' || $value === null) ? null : $value;
+            };
+            $age = $nullable($age);
+            $weight = $nullable($weight);
+            $microchip_id = $nullable($microchip_id);
             
             $sql = "INSERT INTO pets (user_id, name, species, breed, color, age, weight, distinguishing_features, microchip_id, profile_image) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -165,6 +176,14 @@ class Pet {
             if (!$this->isOwner($pet_id, $user_id)) {
                 return ['success' => false, 'message' => 'Tier nicht gefunden'];
             }
+            if (empty($date_missing)) {
+                return ['success' => false, 'message' => 'Bitte gib an, seit wann dein Tier vermisst wird'];
+            }
+            $reward = ($reward === '' || $reward === null) ? null : $reward;
+            
+            // Alte offene Meldungen schließen, damit nur eine aktiv ist
+            $stmt = $this->db->prepare("UPDATE missing_reports SET status = 'closed' WHERE pet_id = ? AND status = 'active'");
+            $stmt->execute([$pet_id]);
             
             $stmt = $this->db->prepare("UPDATE pets SET is_missing = TRUE WHERE id = ? AND user_id = ?");
             $stmt->execute([$pet_id, $user_id]);
@@ -227,6 +246,33 @@ class Pet {
         } catch (Exception $e) {
             return [];
         }
+    }
+    
+    /**
+     * Mögliche Funde (KI-Treffer) für die Tiere eines Users
+     */
+    public function getMatchesForUser($user_id) {
+        $stmt = $this->db->prepare(
+            "SELECT mr.id AS match_id, mr.pet_id, mr.similarity_score, mr.matched_at,
+                    p.name AS pet_name, p.species,
+                    fr.image_path, fr.location_found, fr.latitude, fr.longitude,
+                    fr.finder_contact, fr.finder_phone, fr.description, fr.created_at
+             FROM match_results mr
+             JOIN pets p ON mr.pet_id = p.id
+             JOIN finder_reports fr ON mr.finder_report_id = fr.id
+             WHERE p.user_id = ? AND p.is_missing = TRUE
+             ORDER BY fr.created_at DESC
+             LIMIT 50"
+        );
+        $stmt->execute([$user_id]);
+        $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($matches as &$match) {
+            // Absoluten Serverpfad in eine öffentliche URL umwandeln
+            $match['image'] = 'uploads/finder/' . basename($match['image_path']);
+            unset($match['image_path']);
+        }
+        return $matches;
     }
     
     /**
