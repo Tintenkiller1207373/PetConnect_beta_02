@@ -33,10 +33,12 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      # ping über den Socket; liefert auch ohne Login 0, sobald der Server läuft
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      start_period: 120s
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
 
 volumes:
   uploads:
